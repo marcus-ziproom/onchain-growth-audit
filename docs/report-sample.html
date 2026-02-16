@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ChainPulse Labs — Sample Report</title>
+  <style>
+    :root{--bg:#060a16;--panel:#111a37;--line:#2d4176;--text:#eef4ff;--muted:#9fb3de;--green:#34d399}
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#060a16,#0a1228);color:var(--text);font-family:Inter,system-ui}
+    .wrap{max-width:980px;margin:0 auto;padding:32px 18px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:12px 0}
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .kpi .box{background:#0c1531;border:1px solid #314884;border-radius:12px;padding:12px}
+    .kpi b{display:block;font-size:24px;color:var(--green)}
+    .muted{color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:800px){.kpi{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p><a href="./" style="color:#9fdfff">← Back to site</a></p>
+    <h1>Sample Audit Output</h1>
+    <p class="muted">Example structure of a delivered ChainPulse report (redacted demo format).</p>
+
+    <div class="card">
+      <h2>Executive Summary</h2>
+      <p class="muted">Core finding: high inflow from campaign wallets but weak Day-7 retention and concentration risk from top 20 holders.</p>
+      <div class="kpi">
+        <div class="box"><b>18.4%</b><span class="muted">D7 retention</span></div>
+        <div class="box"><b>61%</b><span class="muted">Top-20 holder share</span></div>
+        <div class="box"><b>2.1x</b><span class="muted">Campaign wallet churn vs baseline</span></div>
+        <div class="box"><b>+27%</b><span class="muted">Projected lift from top fixes</span></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Risk Map (sample)</h3>
+        <ul>
+          <li>High unlock clustering in 30-day window</li>
+          <li>Whale wallet overlap with low-engagement cohorts</li>
+          <li>Incentive loop generating mercenary behavior</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Action Backlog (sample)</h3>
+        <ol>
+          <li>Reweight rewards by retained behavior, not one-time actions</li>
+          <li>Introduce anti-farm friction in campaign funnel</li>
+          <li>Stagger unlock communications + treasury contingency</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>What clients receive</h3>
+      <ul>
+        <li>PDF report with evidence and findings</li>
+        <li>Action sheet with owners + priority</li>
+        <li>KPI list and weekly tracking thresholds</li>
+      </ul>
+      <p><a href="./intake.html" style="color:#9fdfff;font-weight:700">Proceed to Intake →</a></p>
+    </div>
+  </div>
+</body>
+</html>
