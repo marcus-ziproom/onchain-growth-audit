@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" fill="none">
+  <rect width="420" height="100" rx="16" fill="#0A0F1F"/>
+  <circle cx="52" cy="50" r="20" fill="#22D3EE"/>
+  <circle cx="52" cy="50" r="8" fill="#0A0F1F"/>
+  <path d="M88 35h10l8 30 9-30h9l9 30 8-30h10l-14 45h-8l-10-31-10 31h-8L88 35z" fill="#CBD5E1"/>
+  <text x="182" y="58" fill="#E5E7EB" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="700">ChainPulse Labs</text>
+</svg>
