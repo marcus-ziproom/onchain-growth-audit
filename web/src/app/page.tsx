@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Footer, Nav } from "@/components/SiteFrame";
+import Reveal from "@/components/Reveal";
 
 export default function Home() {
   return (
@@ -11,12 +12,14 @@ export default function Home() {
       <main className="container">
         <section className="hero">
           <span className="pill">Trading as ChainPulse Labs • Operated by AJAP UK Ltd</span>
-          <h1 className="h1"><span className="grad">On-chain growth intelligence</span> for serious crypto teams.</h1>
+          <h1 className="h1 glow-title"><span className="grad">On-chain growth intelligence</span> for serious crypto teams.</h1>
           <p className="lead">Decision-grade diagnostics on user behavior, token mechanics, and growth leakage—delivered in 48 hours, fully async.</p>
           <div className="hero-cta">
             <Link className="btn btn-pri" href="/intake">Proceed to Intake</Link>
             <Link className="btn btn-sec" href="/report-sample">View Sample Report</Link>
           </div>
+
+          <div className="marquee"><div className="marquee-track"><span>Token Dynamics</span><span>Retention Intelligence</span><span>Holder Risk Mapping</span><span>Liquidity Behavior</span><span>Growth Leak Detection</span><span>Token Dynamics</span><span>Retention Intelligence</span><span>Holder Risk Mapping</span><span>Liquidity Behavior</span><span>Growth Leak Detection</span></div></div>
 
           <div className="grid stats">
             <div className="card stat"><b>48h</b><p>turnaround after complete intake</p></div>
@@ -26,7 +29,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="offer">
+        <Reveal><section id="offer">
           <h2>Flagship Offer</h2>
           <p className="sub">Single premium product with explicit scope and clear output quality.</p>
           <div className="grid offer">
@@ -49,18 +52,18 @@ export default function Home() {
               <Link className="btn btn-sec" style={{ width: "100%", marginTop: 10 }} href="/report-sample">See Report Sample</Link>
             </aside>
           </div>
-        </section>
+        </section></Reveal>
 
-        <section id="process">
+        <Reveal delay={120}><section id="process">
           <h2>Delivery Process</h2>
           <div className="grid process">
             <div className="card"><h3>1) Intake + settlement</h3><p className="sub">Submit brief + addresses. Receive USDC settlement details and confirmation flow.</p></div>
             <div className="card"><h3>2) Deep diagnostics</h3><p className="sub">We run on-chain behavior and token mechanics analysis against your stated objective.</p></div>
             <div className="card"><h3>3) Execution packet</h3><p className="sub">You receive report, action backlog, and KPI framework for immediate rollout.</p></div>
           </div>
-        </section>
+        </section></Reveal>
 
-        <section>
+        <Reveal delay={220}><section>
           <div className="cta-band">
             <div>
               <b style={{ fontSize: 26 }}>Need clarity before launch or growth spend?</b>
@@ -68,7 +71,7 @@ export default function Home() {
             </div>
             <Link className="btn btn-pri" href="/intake">Start Intake</Link>
           </div>
-        </section>
+        </section></Reveal>
       </main>
 
       <Footer />
