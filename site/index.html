@@ -3,241 +3,237 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ChainPulse Labs | Web3 Growth Intelligence</title>
-  <meta name="description" content="ChainPulse Labs delivers professional on-chain growth intelligence, tokenomics diagnostics, and launch-ready execution plans for Web3 teams." />
-  <meta property="og:title" content="ChainPulse Labs | Web3 Growth Intelligence" />
-  <meta property="og:description" content="Data-backed growth and tokenomics diagnostics for Web3 teams." />
+  <title>ChainPulse Labs — Crypto Growth Intelligence</title>
+  <meta name="description" content="Premium Web3-native growth intelligence and tokenomics diagnostics. Built for serious crypto teams shipping on-chain." />
+  <meta property="og:title" content="ChainPulse Labs — Crypto Growth Intelligence" />
+  <meta property="og:description" content="Web3-native, data-first, execution-ready growth diagnostics." />
   <style>
     :root{
-      --bg:#070b16;
-      --bg2:#0e1530;
-      --card:#111a36;
-      --line:#27345e;
-      --text:#edf2ff;
-      --muted:#afbddf;
+      --bg:#05070f;
+      --bg2:#0a1022;
+      --panel:#0c1530cc;
+      --line:#273763;
+      --text:#edf4ff;
+      --muted:#9bb0dc;
       --cyan:#22d3ee;
+      --violet:#8b5cf6;
+      --mag:#ec4899;
       --green:#34d399;
-      --purple:#8b5cf6;
-      --danger:#f59e0b;
-      --max:1120px;
-      --radius:16px;
+      --warn:#f59e0b;
+      --max:1160px;
+      --r:18px;
+      --shadow:0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
     body{
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:
-        radial-gradient(1200px 500px at 10% -10%, #172554 0%, transparent 60%),
-        radial-gradient(1100px 500px at 90% -20%, #312e81 0%, transparent 60%),
-        linear-gradient(180deg, var(--bg) 0%, #0a1022 100%);
-      color:var(--text);
-      line-height:1.6;
+        radial-gradient(900px 500px at 8% -10%, rgba(34,211,238,.14), transparent 70%),
+        radial-gradient(700px 420px at 92% -5%, rgba(139,92,246,.18), transparent 70%),
+        radial-gradient(1100px 700px at 50% 120%, rgba(236,72,153,.08), transparent 60%),
+        linear-gradient(180deg,var(--bg),var(--bg2));
+      overflow-x:hidden;
+    }
+    .noise:before{
+      content:"";position:fixed;inset:0;pointer-events:none;opacity:.08;
+      background-image:radial-gradient(circle at 1px 1px, #fff 1px, transparent 0);
+      background-size:3px 3px;mix-blend-mode:soft-light;
+    }
+    .grid-bg:before{
+      content:"";position:fixed;inset:0;pointer-events:none;opacity:.14;
+      background-image:linear-gradient(rgba(139,92,246,.15) 1px, transparent 1px),linear-gradient(90deg, rgba(34,211,238,.12) 1px, transparent 1px);
+      background-size:60px 60px;
+      mask-image:radial-gradient(circle at center, black 35%, transparent 85%);
     }
     .container{max-width:var(--max);margin:0 auto;padding:0 22px}
-    .nav{
-      position:sticky;top:0;z-index:50;
-      backdrop-filter: blur(10px);
-      background:rgba(7,11,22,.8);
-      border-bottom:1px solid rgba(39,52,94,.7);
-    }
+
+    .nav{position:sticky;top:0;z-index:60;border-bottom:1px solid #1b2747;background:rgba(4,7,16,.7);backdrop-filter:blur(14px)}
     .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
-    .brand{display:flex;align-items:center;gap:12px;font-weight:700}
-    .brand-dot{width:12px;height:12px;border-radius:999px;background:var(--cyan);box-shadow:0 0 20px rgba(34,211,238,.8)}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.01em}
+    .brand-mark{width:12px;height:12px;border-radius:999px;background:linear-gradient(135deg,var(--cyan),var(--violet));box-shadow:0 0 20px rgba(34,211,238,.7)}
+    .brand small{display:block;font-size:10px;color:#88a3db;letter-spacing:.08em;text-transform:uppercase}
     .links{display:flex;gap:20px;align-items:center}
-    .links a{color:var(--muted);text-decoration:none;font-weight:500}
+    .links a{color:var(--muted);text-decoration:none;font-weight:600}
     .links a:hover{color:var(--text)}
-    .btn{
-      display:inline-flex;align-items:center;justify-content:center;
-      padding:11px 16px;border-radius:12px;text-decoration:none;font-weight:700;
-      border:1px solid transparent;transition:.2s ease;
-    }
-    .btn-primary{background:var(--cyan);color:#04111a}
-    .btn-primary:hover{transform:translateY(-1px);filter:brightness(1.06)}
-    .btn-ghost{border-color:var(--line);color:var(--text)}
-    .btn-ghost:hover{background:rgba(34,211,238,.08)}
-    .hero{padding:84px 0 46px}
-    .pill{display:inline-flex;gap:8px;align-items:center;background:rgba(34,211,238,.09);color:#8aefff;border:1px solid rgba(34,211,238,.35);padding:7px 11px;border-radius:999px;font-size:13px}
-    h1{font-size:56px;line-height:1.03;margin:16px 0 14px;max-width:900px;letter-spacing:-.02em}
-    .lead{max-width:760px;color:var(--muted);font-size:20px}
-    .hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin:28px 0 16px}
-    .micro{color:#8fa4d8;font-size:13px}
-    .grid{display:grid;gap:16px}
-    .kpi{grid-template-columns:repeat(4,1fr);margin:24px 0 0}
-    .card{background:linear-gradient(180deg, rgba(17,26,54,.8) 0%, rgba(17,26,54,.55) 100%);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
-    .kpi .num{font-size:28px;font-weight:800;color:var(--green)}
-    .kpi .lbl{color:var(--muted);font-size:13px}
-    section{padding:36px 0}
-    h2{font-size:34px;line-height:1.2;margin:0 0 8px}
-    .section-sub{color:var(--muted);max-width:760px;margin-bottom:20px}
-    .offers{grid-template-columns:1.2fr 1fr}
-    .price{font-size:42px;font-weight:800;color:var(--green);line-height:1}
-    ul{margin:8px 0 0 20px;padding:0}
-    li{margin:8px 0;color:#c3d0f1}
-    .steps{grid-template-columns:repeat(3,1fr)}
-    .step-num{font-size:12px;color:#89a8ff;text-transform:uppercase;letter-spacing:.08em}
-    .step-title{font-size:20px;font-weight:700;margin:6px 0}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:12px;text-decoration:none;font-weight:800;transition:.2s ease}
+    .btn-pri{background:linear-gradient(90deg,var(--cyan),#67e8f9);color:#04202a;border:0}
+    .btn-pri:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(34,211,238,.3)}
+    .btn-sec{border:1px solid var(--line);color:var(--text)}
+    .btn-sec:hover{background:rgba(139,92,246,.12);border-color:#4c5f97}
+
+    .hero{padding:84px 0 40px;position:relative}
+    .pill{display:inline-flex;gap:8px;align-items:center;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #2f4378;background:rgba(12,21,48,.9);color:#a8bbed}
+    .dot{width:7px;height:7px;border-radius:999px;background:var(--green);box-shadow:0 0 8px rgba(52,211,153,.7)}
+    h1{font-size:64px;line-height:1.01;letter-spacing:-.03em;margin:14px 0 12px;max-width:980px}
+    .grad{background:linear-gradient(90deg,#fff 0%,#9be7ff 30%,#b59cff 68%,#ff9fda 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .lead{max-width:780px;color:var(--muted);font-size:20px}
+    .hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin:26px 0 12px}
+
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
+    .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+    .stat b{font-size:30px;color:var(--green)}
+    .stat p{margin:2px 0 0;color:var(--muted);font-size:13px}
+
+    section{padding:42px 0}
+    h2{font-size:36px;margin:0 0 8px;letter-spacing:-.01em}
+    .sub{color:var(--muted);max-width:760px;margin:0 0 18px}
+
+    .cards{display:grid;gap:14px}
+    .offer{grid-template-columns:1.2fr .8fr}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;border:1px solid #3b4c82;color:#9db4ea;background:#101b3e}
+    .price{font-size:44px;font-weight:900;color:var(--green);line-height:1;margin:8px 0}
+    ul{margin:10px 0 0 18px;padding:0}
+    li{margin:8px 0;color:#cad5f4}
+
+    .process{grid-template-columns:repeat(3,1fr)}
+    .stepN{font-size:11px;color:#92a8de;text-transform:uppercase;letter-spacing:.1em}
+    .stepT{font-size:21px;font-weight:800;margin:6px 0}
+
     .proof{grid-template-columns:repeat(3,1fr)}
-    .proof .tag{display:inline-block;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.4);color:#98f5d0;font-size:12px;border-radius:999px;padding:4px 8px;margin-bottom:8px}
-    .faq .q{font-weight:700;margin-bottom:6px}
+    .proof .tag{display:inline-block;font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid #495f98;color:#b8ccff;background:#142145}
+
+    .cta-band{margin-top:8px;background:linear-gradient(135deg, rgba(34,211,238,.14), rgba(139,92,246,.16));border:1px solid #3a4f85;padding:22px;border-radius:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .cta-band b{font-size:24px}
+
+    .faq{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .faq .q{font-weight:800;margin-bottom:6px}
     .faq p{margin:0;color:var(--muted)}
-    .footer{
-      margin-top:28px;border-top:1px solid var(--line);padding:22px 0 40px;color:#95a6d3;font-size:13px
-    }
-    .banner{
-      margin-top:18px;padding:12px 14px;border-radius:12px;
-      border:1px solid rgba(245,158,11,.35);
-      background:rgba(245,158,11,.08);
-      color:#ffd089;font-size:14px
-    }
-    .note{font-size:13px;color:#93a8da}
-    .split{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}
-    .mini{font-size:12px;color:#95a3c9;text-transform:uppercase;letter-spacing:.08em}
-    @media (max-width:980px){
-      h1{font-size:44px}
-      .kpi{grid-template-columns:repeat(2,1fr)}
-      .offers,.steps,.proof,.split{grid-template-columns:1fr}
-    }
-    @media (max-width:640px){
-      .links a{display:none}
-      h1{font-size:36px}
-      .lead{font-size:18px}
-    }
+
+    .foot{margin-top:30px;padding:20px 0 40px;border-top:1px solid #1f2c50;color:#90a5d5;font-size:13px}
+
+    @media (max-width:1040px){h1{font-size:48px}.stats{grid-template-columns:repeat(2,1fr)}.offer,.process,.proof,.faq{grid-template-columns:1fr}}
+    @media (max-width:700px){.links a{display:none}h1{font-size:38px}.lead{font-size:18px}.stats{grid-template-columns:1fr}}
   </style>
 </head>
-<body>
+<body class="noise grid-bg">
   <header class="nav">
     <div class="container nav-inner">
-      <div class="brand"><span class="brand-dot"></span> ChainPulse Labs</div>
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <div>ChainPulse Labs<small>Crypto Growth Intelligence</small></div>
+      </div>
       <nav class="links">
         <a href="#offer">Offer</a>
         <a href="#process">Process</a>
-        <a href="#proof">Why us</a>
+        <a href="#proof">Proof</a>
         <a href="#faq">FAQ</a>
-        <a class="btn btn-primary" href="mailto:hello@chainpulselabs.com?subject=Start%2048h%20Audit">Book Audit</a>
+        <a class="btn btn-pri" href="mailto:hello@chainpulselabs.com?subject=Start%20Audit">Start Audit</a>
       </nav>
     </div>
   </header>
 
   <main>
-    <section class="hero">
-      <div class="container">
-        <span class="pill">Trading as ChainPulse Labs • Operated by AJAP UK Ltd</span>
-        <h1>Web3 growth decisions backed by on-chain evidence — delivered in 48 hours.</h1>
-        <p class="lead">We help token projects and on-chain products identify growth leaks, holder risk, and incentive inefficiencies with a fixed-scope audit you can execute immediately.</p>
-        <div class="hero-cta">
-          <a class="btn btn-primary" href="mailto:hello@chainpulselabs.com?subject=Start%2048h%20Audit">Start 48-Hour Audit</a>
-          <a class="btn btn-ghost" href="#offer">See deliverables</a>
-        </div>
-        <p class="micro">Async-first • No calls required • Fixed price • USDC accepted</p>
+    <section class="hero container">
+      <span class="pill"><span class="dot"></span>Trading as ChainPulse Labs • Operated by AJAP UK Ltd</span>
+      <h1><span class="grad">Decision-grade on-chain intelligence</span> for teams scaling token ecosystems.</h1>
+      <p class="lead">We decode on-chain behavior, token dynamics, and growth leak points into a focused execution packet your team can ship this week. Fully async. No calls required.</p>
+      <div class="hero-cta">
+        <a class="btn btn-pri" href="mailto:hello@chainpulselabs.com?subject=I%20want%20the%2048-hour%20audit">Buy 48h Audit</a>
+        <a class="btn btn-sec" href="#offer">View Deliverables</a>
+      </div>
 
-        <div class="grid kpi">
-          <div class="card"><div class="num">48h</div><div class="lbl">delivery turnaround</div></div>
-          <div class="card"><div class="num">$1,200</div><div class="lbl">fixed audit price</div></div>
-          <div class="card"><div class="num">10+</div><div class="lbl">actionable fixes per report</div></div>
-          <div class="card"><div class="num">1</div><div class="lbl">single offer, clear scope</div></div>
+      <div class="stats">
+        <div class="stat"><b>48h</b><p>turnaround from full intake</p></div>
+        <div class="stat"><b>$1,200</b><p>fixed price, USDC upfront</p></div>
+        <div class="stat"><b>10+</b><p>prioritized growth actions</p></div>
+        <div class="stat"><b>1</b><p>single offer, zero scope drift</p></div>
+      </div>
+    </section>
+
+    <section id="offer" class="container">
+      <h2>Flagship Product</h2>
+      <p class="sub">A premium, narrow-scope diagnostic product designed for immediate monetization and execution clarity.</p>
+      <div class="cards offer">
+        <article class="card">
+          <span class="badge">48-Hour Product</span>
+          <h3 style="font-size:30px;margin:10px 0 8px">On-Chain Growth + Tokenomics Audit</h3>
+          <ul>
+            <li>Wallet cohort behavior and conversion-funnel diagnostics</li>
+            <li>Holder concentration, token flow, and unlock pressure scan</li>
+            <li>Retention/leak analysis across core on-chain actions</li>
+            <li>Incentive model and emissions stress-check</li>
+            <li>Competitor positioning snapshot (market + token mechanics)</li>
+            <li>Impact-ranked 14-day execution backlog</li>
+            <li>KPI operating layer (what to track weekly + thresholds)</li>
+          </ul>
+        </article>
+        <aside class="card">
+          <span class="badge">Pricing</span>
+          <div class="price">$1,200 USDC</div>
+          <p class="sub" style="margin:0 0 10px">Upfront payment. Scope locked. Delivery in 48 hours after intake complete.</p>
+          <a class="btn btn-pri" style="width:100%" href="mailto:hello@chainpulselabs.com?subject=Proceed%20with%20%241200%20Audit">Proceed to Intake</a>
+          <p style="font-size:13px;color:#8fa6d9;margin:10px 0 0">Includes one async clarification follow-up after delivery.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="process" class="container">
+      <h2>Execution Flow</h2>
+      <p class="sub">Designed for speed and founder time efficiency.</p>
+      <div class="cards process">
+        <div class="card">
+          <div class="stepN">Step 01</div>
+          <div class="stepT">Intake + Settlement</div>
+          <p class="sub" style="margin:0">You send links, contract/token addresses, and objective priority. USDC settlement instructions are issued immediately.</p>
+        </div>
+        <div class="card">
+          <div class="stepN">Step 02</div>
+          <div class="stepT">Chain Diagnostics</div>
+          <p class="sub" style="margin:0">We analyze user flow, token pressure, holder quality, and growth inefficiencies across your key on-chain surfaces.</p>
+        </div>
+        <div class="card">
+          <div class="stepN">Step 03</div>
+          <div class="stepT">Delivery Packet</div>
+          <p class="sub" style="margin:0">You receive a polished report + ranked action backlog + KPI layer ready for internal execution.</p>
         </div>
       </div>
     </section>
 
-    <section id="offer">
-      <div class="container">
-        <h2>One paid product. Built for speed to execution.</h2>
-        <p class="section-sub">No bloated consulting retainers. You get a focused, high-signal audit that maps exactly where value leaks and what to fix first.</p>
-
-        <div class="grid offers">
-          <article class="card">
-            <p class="mini">Product</p>
-            <h3 style="margin:4px 0 8px;font-size:28px">48-Hour On-Chain Growth + Tokenomics Audit</h3>
-            <ul>
-              <li>Wallet/user funnel diagnostics (acquisition → activation → retention)</li>
-              <li>Token flow and holder concentration risk map</li>
-              <li>Incentive and emissions stress check</li>
-              <li>Competitive benchmark snapshot</li>
-              <li>Prioritized growth backlog (impact × effort)</li>
-              <li>KPI operating dashboard specification</li>
-            </ul>
-          </article>
-
-          <aside class="card">
-            <p class="mini">Price</p>
-            <div class="price">$1,200 USDC</div>
-            <p class="section-sub" style="margin:10px 0 0">Paid upfront. Scope locked. Delivery in 48 hours after intake is complete.</p>
-            <a class="btn btn-primary" style="width:100%;margin-top:6px" href="mailto:hello@chainpulselabs.com?subject=I%20want%20the%20%241200%20audit">Buy Audit</a>
-            <p class="note" style="margin-top:10px">Includes one async follow-up clarification thread.</p>
-          </aside>
+    <section id="proof" class="container">
+      <h2>Why ChainPulse</h2>
+      <p class="sub">Built for crypto operators who care about signal quality, speed, and actionability.</p>
+      <div class="cards proof">
+        <div class="card">
+          <span class="tag">Web3-native</span>
+          <h3 style="margin:8px 0 6px">On-chain first, not generic growth fluff</h3>
+          <p class="sub" style="margin:0">We inspect what actually happened on-chain and map the economic implications.</p>
         </div>
+        <div class="card">
+          <span class="tag">Productized</span>
+          <h3 style="margin:8px 0 6px">Clear scope, no consulting sprawl</h3>
+          <p class="sub" style="margin:0">One premium product, one fixed price, one consistent output quality standard.</p>
+        </div>
+        <div class="card">
+          <span class="tag">Operator-grade</span>
+          <h3 style="margin:8px 0 6px">Prioritized decisions, not abstract theory</h3>
+          <p class="sub" style="margin:0">Every recommendation is ranked by likely impact and implementation effort.</p>
+        </div>
+      </div>
+
+      <div class="cta-band">
+        <div>
+          <b>Ready to run a real audit this week?</b>
+          <div style="color:#9cb2df">Async onboarding + 48-hour delivery window starts on confirmed intake.</div>
+        </div>
+        <a class="btn btn-pri" href="mailto:hello@chainpulselabs.com?subject=Start%20this%20week">Start This Week</a>
       </div>
     </section>
 
-    <section id="process">
-      <div class="container">
-        <h2>How delivery works</h2>
-        <p class="section-sub">Simple process, built for founder speed. Everything async.</p>
-        <div class="grid steps">
-          <div class="card">
-            <div class="step-num">Step 01</div>
-            <div class="step-title">Intake + payment</div>
-            <p class="section-sub" style="margin:0">You send project links, key contract/token addresses, chain focus, and business objective. USDC invoice shared instantly.</p>
-          </div>
-          <div class="card">
-            <div class="step-num">Step 02</div>
-            <div class="step-title">Deep analysis</div>
-            <p class="section-sub" style="margin:0">We map behavior, token dynamics, retention leaks, and exposure risks using public on-chain + market signals.</p>
-          </div>
-          <div class="card">
-            <div class="step-num">Step 03</div>
-            <div class="step-title">Execution packet</div>
-            <p class="section-sub" style="margin:0">You receive a decision-grade report, prioritized actions, and KPI framework your team can run this week.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="proof">
-      <div class="container">
-        <h2>Why teams choose ChainPulse</h2>
-        <p class="section-sub">We are built around one thing: helping Web3 operators make higher-quality growth decisions fast.</p>
-        <div class="grid proof">
-          <div class="card">
-            <span class="tag">Specialized</span>
-            <h3 style="margin:0 0 6px">Web3-native analysis</h3>
-            <p class="section-sub" style="margin:0">Not generic marketing playbooks. We analyze token and on-chain behavior directly.</p>
-          </div>
-          <div class="card">
-            <span class="tag">Productized</span>
-            <h3 style="margin:0 0 6px">Clear deliverables</h3>
-            <p class="section-sub" style="margin:0">One offer, one timeline, one fixed price. No scope confusion.</p>
-          </div>
-          <div class="card">
-            <span class="tag">Actionable</span>
-            <h3 style="margin:0 0 6px">Decisions you can ship</h3>
-            <p class="section-sub" style="margin:0">Every report includes a prioritized backlog and KPI map for immediate execution.</p>
-          </div>
-        </div>
-
-        <div class="banner">
-          Founder note: this offer is intentionally narrow and high-velocity to prioritize immediate operating value over slideware.
-        </div>
-      </div>
-    </section>
-
-    <section id="faq">
-      <div class="container">
-        <h2>FAQ</h2>
-        <div class="grid split faq">
-          <div class="card"><div class="q">Do we need a call?</div><p>No. Intake and delivery are fully async by default.</p></div>
-          <div class="card"><div class="q">What chains/projects do you support?</div><p>EVM-first initially; multi-chain scopes can be included when data coverage is sufficient.</p></div>
-          <div class="card"><div class="q">What do you need from us?</div><p>Project context, contract/token addresses, analytics links (if available), and objective priority.</p></div>
-          <div class="card"><div class="q">Can you implement the recommendations?</div><p>Yes, implementation support can be scoped after the initial audit delivery.</p></div>
-        </div>
+    <section id="faq" class="container">
+      <h2>FAQ</h2>
+      <div class="faq">
+        <div class="card"><div class="q">Do we need meetings?</div><p>No. Process is async-first by design.</p></div>
+        <div class="card"><div class="q">Which projects fit best?</div><p>Projects with active or near-term token ecosystems needing sharper growth economics.</p></div>
+        <div class="card"><div class="q">What inputs are required?</div><p>Project links, contract/token addresses, chain scope, and top objective.</p></div>
+        <div class="card"><div class="q">Can implementation be added?</div><p>Yes, implementation support can be scoped after audit delivery.</p></div>
       </div>
     </section>
   </main>
 
-  <footer class="footer">
-    <div class="container">
-      © 2026 AJAP UK Ltd — trading as ChainPulse Labs • Contact: hello@chainpulselabs.com
-    </div>
+  <footer class="foot">
+    <div class="container">© 2026 AJAP UK Ltd • Trading as ChainPulse Labs • hello@chainpulselabs.com</div>
   </footer>
 </body>
 </html>
