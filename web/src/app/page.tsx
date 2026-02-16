@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Footer, Nav } from "@/components/SiteFrame";
 import Reveal from "@/components/Reveal";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Home() {
   return (
@@ -15,8 +18,8 @@ export default function Home() {
           <h1 className="h1 glow-title"><span className="grad">On-chain growth intelligence</span> for serious crypto teams.</h1>
           <p className="lead">Decision-grade diagnostics on user behavior, token mechanics, and growth leakage—delivered in 48 hours, fully async.</p>
           <div className="hero-cta">
-            <Link className="btn btn-pri" href="/intake">Proceed to Intake</Link>
-            <Link className="btn btn-sec" href="/report-sample">View Sample Report</Link>
+            <Link className="btn btn-pri" href="/intake" onClick={() => trackEvent("hero_intake_click")}>Proceed to Intake</Link>
+            <Link className="btn btn-sec" href="/report-sample" onClick={() => trackEvent("hero_sample_click")}>View Sample Report</Link>
           </div>
 
           <div className="marquee"><div className="marquee-track"><span>Token Dynamics</span><span>Retention Intelligence</span><span>Holder Risk Mapping</span><span>Liquidity Behavior</span><span>Growth Leak Detection</span><span>Token Dynamics</span><span>Retention Intelligence</span><span>Holder Risk Mapping</span><span>Liquidity Behavior</span><span>Growth Leak Detection</span></div></div>
@@ -48,8 +51,8 @@ export default function Home() {
               <div style={{ fontSize: 12, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Fixed Pricing</div>
               <div className="price">$1,200 USDC</div>
               <p className="sub">Paid upfront. Scope locked. Delivery in 48 hours post-intake.</p>
-              <Link className="btn btn-pri" style={{ width: "100%" }} href="/intake">Buy Audit</Link>
-              <Link className="btn btn-sec" style={{ width: "100%", marginTop: 10 }} href="/report-sample">See Report Sample</Link>
+              <Link className="btn btn-pri" style={{ width: "100%" }} href="/intake" onClick={() => trackEvent("offer_buy_click")}>Buy Audit</Link>
+              <Link className="btn btn-sec" style={{ width: "100%", marginTop: 10 }} href="/report-sample" onClick={() => trackEvent("offer_sample_click")}>See Report Sample</Link>
             </aside>
           </div>
         </section></Reveal>
@@ -69,7 +72,7 @@ export default function Home() {
               <b style={{ fontSize: 26 }}>Need clarity before launch or growth spend?</b>
               <div style={{ color: "var(--muted)" }}>Start with the structured intake and secure your 48-hour delivery slot.</div>
             </div>
-            <Link className="btn btn-pri" href="/intake">Start Intake</Link>
+            <Link className="btn btn-pri" href="/intake" onClick={() => trackEvent("bottom_cta_click")}>Start Intake</Link>
           </div>
         </section></Reveal>
       </main>

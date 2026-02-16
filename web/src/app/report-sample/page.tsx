@@ -1,8 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import { Footer, Nav } from "@/components/SiteFrame";
+import { trackEvent } from "@/lib/analytics";
 
 export default function ReportSamplePage() {
+  useEffect(() => { trackEvent("report_sample_view"); }, []);
+
   return (
     <div className="site-shell">
       <AnimatedBackground />
@@ -50,7 +56,7 @@ export default function ReportSamplePage() {
               <li>Action sheet with owners + priority</li>
               <li>KPI list and weekly tracking thresholds</li>
             </ul>
-            <p><Link className="btn btn-pri" href="/intake">Proceed to Intake</Link></p>
+            <p><Link className="btn btn-pri" href="/intake" onClick={() => trackEvent("report_to_intake_click")}>Proceed to Intake</Link></p>
           </div>
         </section>
       </main>
