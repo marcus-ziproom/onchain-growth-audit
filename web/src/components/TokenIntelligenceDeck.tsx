@@ -14,6 +14,8 @@ type Row = {
   tvl: number;
   stakedPct: number;
   lstPct: number;
+  tps?: number;
+  txns24h?: number;
 };
 
 const CHAIN_TO_COINGECKO: Record<string, string> = {
@@ -38,6 +40,16 @@ const CHAIN_TO_COINGECKO: Record<string, string> = {
 
 const BLACKLIST = new Set(["All", "Others", "Stable", "Unknown"]);
 
+const EVM_RPC: Record<string, string> = {
+  Ethereum: "https://cloudflare-eth.com",
+  BSC: "https://bsc-dataseed.binance.org",
+  Base: "https://mainnet.base.org",
+  Arbitrum: "https://arb1.arbitrum.io/rpc",
+  Optimism: "https://mainnet.optimism.io",
+  Avalanche: "https://api.avax.network/ext/bc/C/rpc",
+  Polygon: "https://polygon-rpc.com",
+};
+
 const usd = (n?: number) => {
   if (n === undefined || !isFinite(n)) return "—";
   if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
@@ -52,6 +64,14 @@ const num = (n?: number) => {
   if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
   return `${n.toFixed(2)}`;
+};
+
+const compact = (n?: number) => {
+  if (n === undefined || !isFinite(n)) return "—";
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+  return `${n.toFixed(0)}`;
 };
 
 function RingGauge({ value, label, color }: { value: number; label: string; color: string }) {
@@ -83,7 +103,6 @@ function RingGauge({ value, label, color }: { value: number; label: string; colo
 }
 
 function modelRatios(chain: string) {
-  // Placeholder modeled ratios for visual comparison when live staking/LST per-chain APIs are unavailable.
   const map: Record<string, { staked: number; lst: number }> = {
     Ethereum: { staked: 28, lst: 39 },
     Solana: { staked: 64, lst: 10 },
@@ -99,6 +118,62 @@ function modelRatios(chain: string) {
     Fogo: { staked: 0, lst: 0 },
   };
   return map[chain] ?? { staked: 12, lst: 2 };
+}
+
+async function fetchEvmTps(chain: string): Promise<{ tps?: number; txns24h?: number }> {
+  const rpc = EVM_RPC[chain];
+  if (!rpc) return {};
+  try {
+    const latestReq = { jsonrpc: "2.0", id: 1, method: "eth_getBlockByNumber", params: ["latest", true] };
+    const prevReq = { jsonrpc: "2.0", id: 2, method: "eth_getBlockByNumber", params: ["latest", false] };
+    const r = await fetch(rpc, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify([latestReq, prevReq]),
+    });
+    const j = await r.json();
+    const arr = Array.isArray(j) ? j : [j];
+    const b1 = arr.find((x: any) => x.id === 1)?.result;
+    const b2 = arr.find((x: any) => x.id === 2)?.result;
+    if (!b1 || !b2) return {};
+    const txCount = Array.isArray(b1.transactions) ? b1.transactions.length : 0;
+    const t1 = parseInt(b1.timestamp, 16);
+    const t2 = parseInt(b2.timestamp, 16);
+    const dt = Math.max(1, t1 - t2);
+    const tps = txCount / dt;
+    return { tps, txns24h: tps * 86400 };
+  } catch {
+    return {};
+  }
+}
+
+async function fetchSolanaTps(): Promise<{ tps?: number; txns24h?: number }> {
+  try {
+    const r = await fetch("https://api.mainnet-beta.solana.com", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getRecentPerformanceSamples", params: [1] }),
+    });
+    const j = await r.json();
+    const s = j?.result?.[0];
+    if (!s) return {};
+    const tps = Number(s.numTransactions) / Number(s.samplePeriodSecs || 1);
+    return { tps, txns24h: tps * 86400 };
+  } catch {
+    return {};
+  }
+}
+
+async function fetchBitcoinTps(): Promise<{ tps?: number; txns24h?: number }> {
+  try {
+    const r = await fetch("https://api.blockchair.com/bitcoin/stats");
+    const j = await r.json();
+    const tx24 = j?.data?.transactions_24h;
+    if (!tx24) return {};
+    return { txns24h: tx24, tps: Number(tx24) / 86400 };
+  } catch {
+    return {};
+  }
 }
 
 export default function TokenIntelligenceDeck() {
@@ -122,13 +197,7 @@ export default function TokenIntelligenceDeck() {
         const tvlMap = new Map(chains.map((c) => [c.name, c.tvl]));
         const fogoTvl = tvlMap.get("Fogo") ?? 0;
 
-        const ids = Array.from(
-          new Set(
-            top10
-              .map((c) => CHAIN_TO_COINGECKO[c.name])
-              .filter(Boolean)
-          )
-        ) as string[];
+        const ids = Array.from(new Set(top10.map((c) => CHAIN_TO_COINGECKO[c.name]).filter(Boolean))) as string[];
 
         let marketMap = new Map<string, any>();
         if (ids.length) {
@@ -140,10 +209,21 @@ export default function TokenIntelligenceDeck() {
           marketMap = new Map(markets.map((m) => [m.id, m]));
         }
 
+        // tx metrics best-effort
+        const txMetrics = new Map<string, { tps?: number; txns24h?: number }>();
+        await Promise.all(
+          top10.map(async (c) => {
+            if (c.name === "Solana") txMetrics.set(c.name, await fetchSolanaTps());
+            else if (c.name === "Bitcoin") txMetrics.set(c.name, await fetchBitcoinTps());
+            else txMetrics.set(c.name, await fetchEvmTps(c.name));
+          })
+        );
+
         const builtTop10: Row[] = top10.map((c, i) => {
           const id = CHAIN_TO_COINGECKO[c.name];
           const m = id ? marketMap.get(id) : undefined;
           const ratios = modelRatios(c.name);
+          const tx = txMetrics.get(c.name) ?? {};
           return {
             rank: i + 1,
             chain: c.name,
@@ -156,6 +236,8 @@ export default function TokenIntelligenceDeck() {
             tvl: c.tvl,
             stakedPct: ratios.staked,
             lstPct: ratios.lst,
+            tps: tx.tps,
+            txns24h: tx.txns24h,
           };
         });
 
@@ -189,6 +271,8 @@ export default function TokenIntelligenceDeck() {
               tvl: (p.tvl ?? n.tvl) + (n.tvl - (p.tvl ?? n.tvl)) * 0.45,
               circ: lerp(p.circ, n.circ),
               change24h: lerp(p.change24h, n.change24h, 0.55),
+              tps: lerp(p.tps, n.tps, 0.6),
+              txns24h: lerp(p.txns24h, n.txns24h, 0.6),
             };
           });
         });
@@ -227,7 +311,7 @@ export default function TokenIntelligenceDeck() {
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div>
             <h2 style={{ marginBottom: 4 }}>Live token intelligence deck</h2>
-            <p className="sub" style={{ margin: 0 }}>Top 10 chains rotate from live TVL ranking. Fogo is always anchored at #11.</p>
+            <p className="sub" style={{ margin: 0 }}>Top 10 chains rotate by live TVL. Fogo is always fixed at #11.</p>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button onClick={() => setMode("investor")} className="btn btn-sec" style={{ padding: "7px 10px", background: mode === "investor" ? "rgba(34,211,238,.16)" : undefined }}>Investor View</button>
@@ -279,13 +363,15 @@ export default function TokenIntelligenceDeck() {
         </div>
 
         <div style={{ marginTop: 12, overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 8px", minWidth: 980 }}>
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 8px", minWidth: 1160 }}>
             <thead>
               <tr style={{ color: "#98b3e9", fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em" }}>
                 <th align="left">Rank</th>
                 <th align="left">Chain</th>
                 <th align="right">Token Price</th>
                 <th align="right">TVL</th>
+                <th align="right">Txns (24h)</th>
+                <th align="right">Tx Speed (TPS)</th>
                 <th align="right">Circulating</th>
                 <th align="right">Circ / Max</th>
                 <th align="right">Staked %</th>
@@ -302,6 +388,8 @@ export default function TokenIntelligenceDeck() {
                     <td style={{ padding: "10px 8px", fontWeight: 700 }}>{r.chain}</td>
                     <td align="right" style={{ padding: "10px 8px", fontVariantNumeric: "tabular-nums" }}>{usd(r.price)}</td>
                     <td align="right" style={{ padding: "10px 8px", fontVariantNumeric: "tabular-nums" }}>{usd(r.tvl)}</td>
+                    <td align="right" style={{ padding: "10px 8px", fontVariantNumeric: "tabular-nums" }}>{compact(r.txns24h)}</td>
+                    <td align="right" style={{ padding: "10px 8px", fontVariantNumeric: "tabular-nums" }}>{r.tps ? r.tps.toFixed(2) : "—"}</td>
                     <td align="right" style={{ padding: "10px 8px", fontVariantNumeric: "tabular-nums" }}>{num(r.circ)}</td>
                     <td align="right" style={{ padding: "10px 8px", fontVariantNumeric: "tabular-nums" }}>{r.max ? `${ratio.toFixed(1)}%` : "—"}</td>
                     <td align="right" style={{ padding: "10px 8px", color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{r.stakedPct.toFixed(1)}%</td>
@@ -315,7 +403,7 @@ export default function TokenIntelligenceDeck() {
         </div>
 
         <p style={{ marginTop: 10, fontSize: 12, color: "#8ea6d8" }}>
-          Note: Top 10 rotates by live TVL ranking. Fogo is always displayed as fixed #11. Staked/LST are command-deck model indicators.
+          Notes: leaderboard is ranked by live TVL. Fogo is always anchored as #11. Tx speed/txns are best-effort live (EVM + Solana + Bitcoin where data is available). Staked/LST are modeled indicators.
         </p>
       </div>
     </section>
