@@ -7,7 +7,6 @@ import Reveal from "@/components/Reveal";
 import { trackEvent } from "@/lib/analytics";
 import { IconBolt, IconShield, IconSignal } from "@/components/BrandIcons";
 import TokenIntelligenceDeck from "@/components/TokenIntelligenceDeck";
-import ChainConstellation from "@/components/ChainConstellation";
 
 export default function Home() {
   return (
@@ -45,7 +44,6 @@ export default function Home() {
 
         <Reveal delay={70}><TokenIntelligenceDeck /></Reveal>
 
-        <Reveal delay={90}><section><div className="card" style={{padding:14}}><h2 style={{marginBottom:8}}>Chain constellation map</h2><p className="sub" style={{marginTop:0}}>A live visual network of top ecosystems to amplify the premium command-center feel.</p><ChainConstellation /></div></section></Reveal>
 
         <Reveal>
           <section id="offer">
