@@ -45,6 +45,11 @@ const compact = (n?: number) => {
   return `${n.toFixed(0)}`;
 };
 
+const intFmt = (n?: number) => {
+  if (n === undefined || !isFinite(n)) return "—";
+  return Math.max(0, Math.round(n)).toLocaleString();
+};
+
 function Sparkline({ values, up }: { values: number[]; up: boolean }) {
   if (!values.length) return null;
   const w = 88;
@@ -237,20 +242,21 @@ export default function TokenIntelligenceDeck() {
     };
   }, []);
 
-  // micro realtime movement so board feels alive between API polls
+  // real-time ticker: increments txn counters each second using live/estimated TPS
   useEffect(() => {
     const id = setInterval(() => {
       setRows((prev) =>
         prev.map((r, i) => {
-          const wave = 1 + Math.sin(Date.now() / 700 + i) * 0.0022;
-          const tps = Math.max(0, (r.tps || 0) * wave);
-          const txns24h = tps * 86400;
+          const baseTps = r.tps || 0;
+          const wave = 1 + Math.sin(Date.now() / 1200 + i) * 0.0018;
+          const tps = Math.max(0, baseTps * wave);
+          const txns24h = (r.txns24h || 0) + tps;
           const hist = historyRef.current[r.chain] || [];
           historyRef.current[r.chain] = [...hist.slice(-23), tps];
           return { ...r, tps, txns24h };
         })
       );
-    }, 900);
+    }, 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -283,6 +289,18 @@ export default function TokenIntelligenceDeck() {
         </div>
 
         <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "44px 180px 1fr 120px 100px 110px 100px", gap: 8, alignItems: "center", color: "#9fb3de", fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", padding: "0 10px" }}>
+            <div>Rank</div>
+            <div>Chain</div>
+            <div>TVL bar + Price</div>
+            <div style={{ textAlign: "right" }}>Txns (24h)</div>
+            <div style={{ textAlign: "right" }}>TPS</div>
+            <div style={{ textAlign: "center" }}>TPS Trend</div>
+            <div style={{ textAlign: "right" }}>24h %</div>
+          </div>
+          <div style={{ color: "#8ea6d8", fontSize: 11, padding: "0 10px 4px" }}>
+            Trend line = TPS movement in the last ~24 samples (green up / amber down). Txns(24h) counter ticks every second from current TPS.
+          </div>
           {rows.map((r) => {
             const leader = rows[0]?.tvl || 1;
             const bar = Math.max(4, (r.tvl / leader) * 100);
@@ -299,7 +317,7 @@ export default function TokenIntelligenceDeck() {
                     </div>
                     <div style={{ fontSize: 11, color: "#9fb3de", marginTop: 3, fontVariantNumeric: "tabular-nums" }}>TVL {usd(r.tvl)} {r.price !== undefined ? `• Price ${usd(r.price)}` : ""}</div>
                   </div>
-                  <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{compact(r.txns24h)}</div>
+                  <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{intFmt(r.txns24h)}</div>
                   <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{(r.tps || 0).toFixed(2)}</div>
                   <div style={{ display: "flex", justifyContent: "center" }}><Sparkline values={hist} up={up} /></div>
                   <div style={{ textAlign: "right", color: up ? "#92f8cc" : "#ffc47d", fontVariantNumeric: "tabular-nums" }}>{up ? "▲" : "▼"} {Math.abs(r.change24h ?? 0).toFixed(2)}%</div>
