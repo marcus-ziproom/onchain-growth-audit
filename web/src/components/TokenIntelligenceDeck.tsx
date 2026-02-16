@@ -306,11 +306,43 @@ export default function TokenIntelligenceDeck() {
             const bar = Math.max(4, (r.tvl / leader) * 100);
             const hist = historyRef.current[r.chain] || [r.tps || 0];
             const up = (r.change24h ?? 0) >= 0;
+
+            const isTvlLeaderBand = r.tvl > leader * 0.6;
+            const isHighTps = (r.tps || 0) > 30;
+            const isVolatile = Math.abs(r.change24h || 0) > 2;
+
+            const tint = isVolatile
+              ? "rgba(245,158,11,.12)"
+              : isHighTps
+              ? "rgba(34,211,238,.10)"
+              : isTvlLeaderBand
+              ? "rgba(139,92,246,.12)"
+              : "rgba(10,19,40,.58)";
+
+            const regimeLabel = isVolatile
+              ? "VOLATILE"
+              : isHighTps
+              ? "HIGH TPS"
+              : isTvlLeaderBand
+              ? "TVL LEADER"
+              : "STABLE";
+
+            const regimeColor = isVolatile
+              ? "#ffc47d"
+              : isHighTps
+              ? "#9defff"
+              : isTvlLeaderBand
+              ? "#c8b5ff"
+              : "#9fb3de";
+
             return (
-              <div key={r.chain} style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: "8px 10px", background: "rgba(10,19,40,.58)" }}>
+              <div key={r.chain} style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: "8px 10px", background: tint }}>
                 <div style={{ display: "grid", gridTemplateColumns: "44px 180px 1fr 120px 100px 110px 100px", gap: 8, alignItems: "center" }}>
                   <div style={{ fontWeight: 800, color: "#9ec4ff" }}>#{String(r.rank).padStart(2, "0")}</div>
-                  <div style={{ fontWeight: 700 }}>{r.chain}</div>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{r.chain}</div>
+                    <div style={{ fontSize: 10, color: regimeColor, letterSpacing: ".08em", textTransform: "uppercase" }}>{regimeLabel}</div>
+                  </div>
                   <div>
                     <div style={{ height: 7, borderRadius: 999, background: "rgba(80,105,170,.35)", overflow: "hidden" }}>
                       <div style={{ width: `${bar}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#22d3ee,#8b5cf6,#ec4899)", transition: "width .6s ease" }} />
