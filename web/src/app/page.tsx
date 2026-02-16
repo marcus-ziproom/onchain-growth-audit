@@ -6,7 +6,6 @@ import { Footer, Nav } from "@/components/SiteFrame";
 import Reveal from "@/components/Reveal";
 import { trackEvent } from "@/lib/analytics";
 import { IconBolt, IconShield, IconSignal } from "@/components/BrandIcons";
-import ChainStatsBoard from "@/components/ChainStatsBoard";
 import TokenIntelligenceDeck from "@/components/TokenIntelligenceDeck";
 import ChainConstellation from "@/components/ChainConstellation";
 
@@ -43,7 +42,6 @@ export default function Home() {
           </div>
         </section>
 
-        <Reveal delay={60}><ChainStatsBoard /></Reveal>
 
         <Reveal delay={70}><TokenIntelligenceDeck /></Reveal>
 

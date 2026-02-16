@@ -138,6 +138,18 @@ export default function TokenIntelligenceDeck() {
 
   const top = useMemo(() => rows.slice(0, 3), [rows]);
 
+  const command = useMemo(() => {
+    if (!rows.length) return { totalTvl: 0, avgTvl: 0, dominance: 0, movers: [] as {name:string;d:number}[] };
+    const totalTvl = rows.reduce((a,b)=>a+b.tvl,0);
+    const avgTvl = totalTvl / rows.length;
+    const dominance = rows[0].tvl / totalTvl;
+    const movers = [...rows]
+      .map(r => ({ name: r.chain, d: r.change24h }))
+      .sort((a,b)=>Math.abs(b.d)-Math.abs(a.d))
+      .slice(0,5);
+    return { totalTvl, avgTvl, dominance, movers };
+  }, [rows]);
+
   return (
     <section>
       <div className="card" style={{ padding: 22 }}>
@@ -150,6 +162,32 @@ export default function TokenIntelligenceDeck() {
             <button onClick={() => setMode("investor")} className="btn btn-sec" style={{ padding: "7px 10px", background: mode === "investor" ? "rgba(34,211,238,.16)" : undefined }}>Investor View</button>
             <button onClick={() => setMode("ops")} className="btn btn-sec" style={{ padding: "7px 10px", background: mode === "ops" ? "rgba(139,92,246,.16)" : undefined }}>Founder Ops</button>
             <div style={{ fontSize: 12, color: "#9fb3de", border: "1px solid #35508f", borderRadius: 999, padding: "6px 10px" }}>Live sync {updated}</div>
+          </div>
+        </div>
+
+
+        <div style={{ marginTop: 10, border: "1px solid #2f4a84", borderRadius: 999, overflow: "hidden", background: "rgba(10,19,40,.6)" }}>
+          <div style={{ whiteSpace: "nowrap", display: "inline-block", padding: "8px 0", animation: "marquee 16s linear infinite" }}>
+            {command.movers.concat(command.movers).map((m, idx) => (
+              <span key={`${m.name}-${idx}`} style={{ margin: "0 18px", color: m.d >= 0 ? "#92f8cc" : "#ffc47d", fontWeight: 700 }}>
+                {m.name} {m.d >= 0 ? "▲" : "▼"} {Math.abs(m.d).toFixed(2)}%
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 10 }}>
+          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+            <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Top-10 TVL</div>
+            <div style={{ fontWeight: 900, fontSize: 26, color: "#9df1d0", textShadow: "0 0 14px rgba(34,211,238,.35)", fontVariantNumeric: "tabular-nums" }}>{usd(command.totalTvl)}</div>
+          </div>
+          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+            <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Avg TVL / chain</div>
+            <div style={{ fontWeight: 900, fontSize: 26, color: "#9df1d0", textShadow: "0 0 14px rgba(139,92,246,.35)", fontVariantNumeric: "tabular-nums" }}>{usd(command.avgTvl)}</div>
+          </div>
+          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+            <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Leader dominance</div>
+            <div style={{ fontWeight: 900, fontSize: 26, color: "#9df1d0", textShadow: "0 0 14px rgba(236,72,153,.35)", fontVariantNumeric: "tabular-nums" }}>{(command.dominance * 100).toFixed(1)}%</div>
           </div>
         </div>
 
