@@ -51,8 +51,8 @@ export default function IntakePage() {
       <main className="container">
         <section style={{ padding: "40px 0" }}>
           <p><Link href="/" style={{ color: "#9fdfff" }}>← Back to site</Link></p>
-          <h2>Audit Intake Brief</h2>
-          <p className="sub">Complete this brief. We’ll reply with USDC settlement instructions and confirm your 48-hour delivery window.</p>
+          <h2>Start your 48-hour growth audit</h2>
+          <p className="sub">Share the essentials below. We’ll confirm fit fast, send USDC settlement instructions, and lock your 48-hour delivery window.</p>
 
           <div className="card">
             <form onSubmit={onSubmit}>

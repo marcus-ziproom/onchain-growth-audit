@@ -18,8 +18,8 @@ export default function Home() {
           <div className="hero-grid">
             <div>
               <span className="pill">Trading as ChainPulse Labs • Operated by AJAP UK Ltd</span>
-              <h1 className="h1"><span className="grad">Protocol-grade growth intelligence</span> for token ecosystems.</h1>
-              <p className="lead">ChainPulse delivers decision-quality on-chain diagnostics for teams that need sharper retention, healthier token dynamics, and measurable growth direction in 48 hours.</p>
+              <h1 className="h1"><span className="grad">Revenue-grade growth intelligence</span> for ambitious Web3 teams.</h1>
+              <p className="lead">ChainPulse helps founders and growth leads turn on-chain noise into clear profit decisions—so you can improve retention, reduce token risk, and scale with confidence in 48 hours.</p>
               <div className="hero-cta">
                 <Link className="btn btn-pri" href="/intake" onClick={() => trackEvent("hero_intake_click")}>Start Intake</Link>
                 <Link className="btn btn-sec" href="/report-sample" onClick={() => trackEvent("hero_sample_click")}>View Report Sample</Link>
@@ -42,11 +42,11 @@ export default function Home() {
 
         <Reveal>
           <section id="offer">
-            <h2>One premium offer. Built for operator speed.</h2>
-            <p className="sub">No bloated consulting retainer. One focused engagement with clear input requirements and high-leverage output.</p>
+            <h2>One high-impact offer designed to pay for itself fast.</h2>
+            <p className="sub">No vague advisory. No endless calls. Just a focused audit that gives your team the exact priorities to drive measurable growth now.</p>
             <div className="grid offer-grid">
               <article className="card">
-                <h3 style={{ marginTop: 0, fontSize: 30 }}>Deliverables</h3>
+                <h3 style={{ marginTop: 0, fontSize: 30 }}>What you get</h3>
                 <ul>
                   <li>Wallet/user funnel diagnostics across acquisition → activation → retention</li>
                   <li>Holder concentration + token flow risk map</li>
@@ -59,8 +59,8 @@ export default function Home() {
               <aside className="card">
                 <div style={{ fontSize: 12, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Engagement</div>
                 <div className="price">$1,200</div>
-                <p style={{ marginTop: 4 }}>USDC upfront</p>
-                <p className="sub">Includes one async follow-up clarification round after delivery.</p>
+                <p style={{ marginTop: 4 }}>USDC upfront • fixed scope</p>
+                <p className="sub">Includes one async follow-up so your team can execute fast without losing momentum.</p>
                 <Link className="btn btn-pri" style={{ width: "100%" }} href="/intake" onClick={() => trackEvent("offer_buy_click")}>Buy Audit</Link>
                 <Link className="btn btn-sec" style={{ width: "100%", marginTop: 10 }} href="/report-sample" onClick={() => trackEvent("offer_sample_click")}>See Sample Output</Link>
               </aside>
@@ -70,22 +70,22 @@ export default function Home() {
 
         <Reveal delay={100}>
           <section id="process">
-            <h2>Execution flow</h2>
-            <div className="grid process-grid">
+            <h2>How you get value in 3 steps</h2>
+            <div className="grid process-grid timeline-wrap">
               <div className="card step">
-                <small>Step 01</small>
+                <span className="step-index">01</span><small>Step 01</small>
                 <h3>Intake + Settlement</h3>
-                <p className="sub">You submit project brief, chain focus, and key contract/token addresses. We respond with USDC settlement instructions.</p>
+                <p className="sub">You submit your brief, chain context, and contracts. We confirm fit and send settlement instructions immediately.</p>
               </div>
               <div className="card step">
-                <small>Step 02</small>
+                <span className="step-index">02</span><small>Step 02</small>
                 <h3>Diagnostics Engine</h3>
-                <p className="sub">We map behavior cohorts, retention leakage, holder risk, and economic pressure points for your current state.</p>
+                <p className="sub">We identify exactly where growth leaks, where token pressure builds, and which risks can hurt momentum.</p>
               </div>
               <div className="card step">
-                <small>Step 03</small>
+                <span className="step-index">03</span><small>Step 03</small>
                 <h3>Operator Packet</h3>
-                <p className="sub">You receive a report + ranked action system your team can execute immediately.</p>
+                <p className="sub">You get a board-ready report and a ranked action plan your team can ship this week.</p>
               </div>
             </div>
           </section>
@@ -93,25 +93,25 @@ export default function Home() {
 
         <Reveal delay={180}>
           <section id="proof">
-            <h2>Why this converts for teams</h2>
+            <h2>Why teams buy ChainPulse</h2>
             <div className="grid proof-grid">
               <div className="card">
                 <div className="floaty"><IconSignal /></div>
                 <span className="badge">Web3-native</span>
-                <h3>On-chain evidence first</h3>
+                <h3>Proof over opinions</h3>
                 <p className="sub">Analysis is anchored to observable chain behavior, not generic growth templates.</p>
               </div>
               <div className="card">
                 <div className="floaty"><IconShield /></div>
                 <span className="badge">Productized</span>
-                <h3>Fixed scope, premium quality</h3>
+                <h3>Fast, focused, founder-friendly</h3>
                 <p className="sub">One offer, one timeline, one output standard. Low friction for founders and operators.</p>
               </div>
               <div className="card">
                 <div className="floaty"><IconBolt /></div>
                 <span className="badge">Actionable</span>
-                <h3>Built for immediate execution</h3>
-                <p className="sub">Deliverables include ownership-ready action backlog and KPI operating cadence.</p>
+                <h3>Actions your team can ship</h3>
+                <p className="sub">What you get include ownership-ready action backlog and KPI operating cadence.</p>
               </div>
             </div>
           </section>
@@ -121,8 +121,8 @@ export default function Home() {
           <section>
             <div className="cta-band">
               <div>
-                <b style={{ fontSize: 27 }}>Need decision quality before launch or spend?</b>
-                <div style={{ color: "var(--muted)" }}>Secure your intake slot and start the 48-hour execution window.</div>
+                <b style={{ fontSize: 27 }}>Want stronger growth decisions before your next push?</b>
+                <div style={{ color: "var(--muted)" }}>Secure your slot now and receive your 48-hour audit execution window.</div>
               </div>
               <Link className="btn btn-pri" href="/intake" onClick={() => trackEvent("bottom_cta_click")}>Proceed to Intake</Link>
             </div>

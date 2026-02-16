@@ -16,12 +16,12 @@ export default function ReportSamplePage() {
       <main className="container">
         <section style={{ padding: "40px 0" }}>
           <p><Link href="/" style={{ color: "#9fdfff" }}>← Back to site</Link></p>
-          <h2>Sample Audit Output</h2>
-          <p className="sub">Example structure of a delivered ChainPulse report (redacted demo format).</p>
+          <h2>Sample output: what clients receive</h2>
+          <p className="sub">This is the exact style of decision-ready output teams receive (redacted example).</p>
 
           <div className="card">
             <h3>Executive Summary</h3>
-            <p className="sub">Core finding: high inflow from campaign wallets but weak Day-7 retention and concentration risk from top 20 holders.</p>
+            <p className="sub">Example finding: growth spend is creating top-of-funnel activity, but retention drag and holder concentration risk are suppressing long-term value.</p>
             <div className="grid stats" style={{ marginTop: 12 }}>
               <div className="card stat"><b>18.4%</b><p>D7 retention</p></div>
               <div className="card stat"><b>61%</b><p>Top-20 holder share</p></div>
