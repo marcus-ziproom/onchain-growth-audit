@@ -44,9 +44,38 @@ const num = (n: number) => {
   return `${n.toFixed(2)}`;
 };
 
+function RingGauge({ value, label, color }: { value: number; label: string; color: string }) {
+  const r = 32;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, value));
+  const dash = (pct / 100) * c;
+  return (
+    <div style={{ display: "grid", justifyItems: "center", gap: 6 }}>
+      <svg width="90" height="90" viewBox="0 0 90 90" aria-hidden>
+        <circle cx="45" cy="45" r={r} stroke="rgba(120,140,200,.25)" strokeWidth="8" fill="none" />
+        <circle
+          cx="45"
+          cy="45"
+          r={r}
+          stroke={color}
+          strokeWidth="8"
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${c - dash}`}
+          transform="rotate(-90 45 45)"
+          style={{ filter: "drop-shadow(0 0 8px rgba(34,211,238,.35))" }}
+        />
+        <text x="45" y="49" textAnchor="middle" fill="#d6ffe7" fontSize="12" fontWeight="800">{pct.toFixed(0)}%</text>
+      </svg>
+      <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>{label}</div>
+    </div>
+  );
+}
+
 export default function TokenIntelligenceDeck() {
   const [rows, setRows] = useState<Row[]>([]);
   const [updated, setUpdated] = useState("--:--:--");
+  const [mode, setMode] = useState<"investor" | "ops">("investor");
 
   useEffect(() => {
     let alive = true;
@@ -88,24 +117,15 @@ export default function TokenIntelligenceDeck() {
         if (!alive) return;
         setRows((prev) => {
           if (!prev.length) return built;
-          // smooth transition
           return built.map((n) => {
             const p = prev.find((x) => x.id === n.id);
             if (!p) return n;
             const lerp = (a: number, b: number, k = 0.45) => a + (b - a) * k;
-            return {
-              ...n,
-              price: lerp(p.price, n.price),
-              marketCap: lerp(p.marketCap, n.marketCap),
-              tvl: lerp(p.tvl, n.tvl),
-              circ: lerp(p.circ, n.circ),
-            };
+            return { ...n, price: lerp(p.price, n.price), marketCap: lerp(p.marketCap, n.marketCap), tvl: lerp(p.tvl, n.tvl), circ: lerp(p.circ, n.circ) };
           });
         });
         setUpdated(new Date().toLocaleTimeString());
-      } catch {
-        // keep old
-      }
+      } catch {}
     };
 
     pull();
@@ -124,22 +144,28 @@ export default function TokenIntelligenceDeck() {
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div>
             <h2 style={{ marginBottom: 4 }}>Live token intelligence deck</h2>
-            <p className="sub" style={{ margin: 0 }}>TVL, token price, circulating supply, and staking/LST structure in one visual control panel.</p>
+            <p className="sub" style={{ margin: 0 }}>TVL, token price, circulating supply, and staking/LST structure in one visual command surface.</p>
           </div>
-          <div style={{ fontSize: 12, color: "#9fb3de", border: "1px solid #35508f", borderRadius: 999, padding: "6px 10px" }}>
-            Live sync {updated} • CoinGecko + DeFiLlama
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button onClick={() => setMode("investor")} className="btn btn-sec" style={{ padding: "7px 10px", background: mode === "investor" ? "rgba(34,211,238,.16)" : undefined }}>Investor View</button>
+            <button onClick={() => setMode("ops")} className="btn btn-sec" style={{ padding: "7px 10px", background: mode === "ops" ? "rgba(139,92,246,.16)" : undefined }}>Founder Ops</button>
+            <div style={{ fontSize: 12, color: "#9fb3de", border: "1px solid #35508f", borderRadius: 999, padding: "6px 10px" }}>Live sync {updated}</div>
           </div>
         </div>
 
         <div style={{ marginTop: 12, display: "grid", gap: 10, gridTemplateColumns: "repeat(3,minmax(0,1fr))" }}>
           {top.map((r) => (
-            <div key={r.id} style={{ border: "1px solid #2f4a84", borderRadius: 14, padding: 12, background: "rgba(10,19,40,.62)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <b>{r.chain}</b>
-                <span style={{ color: r.change24h >= 0 ? "#92f8cc" : "#ffc47d", fontWeight: 700 }}>{r.change24h >= 0 ? "▲" : "▼"} {Math.abs(r.change24h).toFixed(2)}%</span>
+            <div key={r.id} style={{ border: "1px solid #2f4a84", borderRadius: 14, padding: 12, background: "rgba(10,19,40,.62)", display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8, alignItems: "center" }}>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <b>{r.chain}</b>
+                  <span style={{ color: r.change24h >= 0 ? "#92f8cc" : "#ffc47d", fontWeight: 700 }}>{r.change24h >= 0 ? "▲" : "▼"} {Math.abs(r.change24h).toFixed(2)}%</span>
+                </div>
+                <div style={{ marginTop: 6, fontSize: 25, fontWeight: 900, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(r.price)}</div>
+                <div style={{ color: "#9fb3de", fontSize: 12 }}>{mode === "investor" ? `MCap ${usd(r.marketCap)}` : `TVL ${usd(r.tvl)}`}</div>
               </div>
-              <div style={{ marginTop: 6, fontSize: 26, fontWeight: 900, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(r.price)}</div>
-              <div style={{ color: "#9fb3de", fontSize: 12 }}>MCap {usd(r.marketCap)} • TVL {usd(r.tvl)}</div>
+              <RingGauge value={r.max > 0 ? (r.circ / r.max) * 100 : 0} label="Circ" color="#22d3ee" />
+              <RingGauge value={mode === "investor" ? r.stakedPct : r.lstPct} label={mode === "investor" ? "Staked" : "LST"} color={mode === "investor" ? "#34d399" : "#8b5cf6"} />
             </div>
           ))}
         </div>
@@ -179,7 +205,7 @@ export default function TokenIntelligenceDeck() {
         </div>
 
         <p style={{ marginTop: 10, fontSize: 12, color: "#8ea6d8" }}>
-          Note: Staked% and LST% are live deck model indicators for visual intelligence framing; core market/TVL/price/circulating metrics are live sourced.
+          Note: Staked% and LST% are command-deck model indicators for comparative framing; market, TVL, price, and circulating metrics are live sourced.
         </p>
       </div>
     </section>
