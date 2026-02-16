@@ -7,6 +7,7 @@ import Reveal from "@/components/Reveal";
 import { trackEvent } from "@/lib/analytics";
 import { IconBolt, IconShield, IconSignal } from "@/components/BrandIcons";
 import ChainStatsBoard from "@/components/ChainStatsBoard";
+import TokenIntelligenceDeck from "@/components/TokenIntelligenceDeck";
 
 export default function Home() {
   return (
@@ -42,6 +43,8 @@ export default function Home() {
         </section>
 
         <Reveal delay={60}><ChainStatsBoard /></Reveal>
+
+        <Reveal delay={70}><TokenIntelligenceDeck /></Reveal>
 
         <Reveal>
           <section id="offer">
