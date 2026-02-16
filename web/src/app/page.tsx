@@ -5,6 +5,7 @@ import AnimatedBackground from "@/components/AnimatedBackground";
 import { Footer, Nav } from "@/components/SiteFrame";
 import Reveal from "@/components/Reveal";
 import { trackEvent } from "@/lib/analytics";
+import { IconBolt, IconShield, IconSignal } from "@/components/BrandIcons";
 
 export default function Home() {
   return (
@@ -95,16 +96,19 @@ export default function Home() {
             <h2>Why this converts for teams</h2>
             <div className="grid proof-grid">
               <div className="card">
+                <div className="floaty"><IconSignal /></div>
                 <span className="badge">Web3-native</span>
                 <h3>On-chain evidence first</h3>
                 <p className="sub">Analysis is anchored to observable chain behavior, not generic growth templates.</p>
               </div>
               <div className="card">
+                <div className="floaty"><IconShield /></div>
                 <span className="badge">Productized</span>
                 <h3>Fixed scope, premium quality</h3>
                 <p className="sub">One offer, one timeline, one output standard. Low friction for founders and operators.</p>
               </div>
               <div className="card">
+                <div className="floaty"><IconBolt /></div>
                 <span className="badge">Actionable</span>
                 <h3>Built for immediate execution</h3>
                 <p className="sub">Deliverables include ownership-ready action backlog and KPI operating cadence.</p>

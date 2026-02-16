@@ -130,3 +130,15 @@ textarea { min-height: 110px; resize: vertical; }
   .h1 { font-size: 42px; }
   .lead { font-size: 18px; }
 }
+
+
+/* overflow hardening */
+*{min-width:0}
+body, p, h1, h2, h3, li, a, span, div { overflow-wrap:anywhere; word-break:break-word; }
+.container, .card, .neon-panel, .cta-band { overflow:hidden; }
+.h1{max-width:100%;}
+.lead{max-width:100%;}
+.links{flex-wrap:wrap;}
+
+.floaty{animation:floaty 6s ease-in-out infinite;}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
