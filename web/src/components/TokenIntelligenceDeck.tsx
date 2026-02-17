@@ -147,6 +147,26 @@ async function fetchBitcoinStats(): Promise<{ tps?: number; txns24h?: number }> 
   }
 }
 
+async function fetchFogoStats(): Promise<{ tps?: number; txns24h?: number }> {
+  try {
+    const r = await fetch("https://mainnet.fogo.io", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getRecentPerformanceSamples", params: [60] }),
+    });
+    const j = await r.json();
+    const samples = Array.isArray(j?.result) ? j.result : [];
+    if (!samples.length) return {};
+    const totalTx = samples.reduce((a: number, s: any) => a + Number(s?.numTransactions || 0), 0);
+    const totalSecs = samples.reduce((a: number, s: any) => a + Number(s?.samplePeriodSecs || 0), 0);
+    if (!totalTx || !totalSecs) return {};
+    const tps = totalTx / totalSecs;
+    return { tps, txns24h: tps * 86400 };
+  } catch {
+    return {};
+  }
+}
+
 export default function TokenIntelligenceDeck() {
   const [rows, setRows] = useState<Row[]>([]);
   const [updated, setUpdated] = useState("--:--:--");
@@ -180,9 +200,11 @@ export default function TokenIntelligenceDeck() {
 
       const marketMap = new Map<string, any>();
       const ids = Array.from(new Set(top10.map((c) => c.gecko_id).filter(Boolean))) as string[];
-      if (ids.length) {
+      ids.push("fogo");
+      const uniqueIds = Array.from(new Set(ids));
+      if (uniqueIds.length) {
         const chunks: string[][] = [];
-        for (let i = 0; i < ids.length; i += 4) chunks.push(ids.slice(i, i + 4));
+        for (let i = 0; i < uniqueIds.length; i += 4) chunks.push(uniqueIds.slice(i, i + 4));
         const marketCalls = await Promise.allSettled(
           chunks.map(async (grp) => {
             const mRes = await fetch(
@@ -228,6 +250,9 @@ export default function TokenIntelligenceDeck() {
         };
       });
 
+      const fogoStats = await fetchFogoStats();
+      const fogoMarket = marketMap.get("fogo");
+
       const built = [
         ...builtTop10,
         {
@@ -235,6 +260,11 @@ export default function TokenIntelligenceDeck() {
           chain: "Fogo",
           geckoId: "fogo",
           tvl: fogoTvl,
+          price: fogoMarket?.current_price,
+          change24h: fogoMarket?.price_change_percentage_24h,
+          supply: fogoMarket?.circulating_supply,
+          tps: fogoStats.tps,
+          txns24h: fogoStats.txns24h,
         } as Row,
       ];
 
