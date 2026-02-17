@@ -150,7 +150,14 @@ async function fetchBitcoinStats(): Promise<{ tps?: number; txns24h?: number }> 
 export default function TokenIntelligenceDeck() {
   const [rows, setRows] = useState<Row[]>([]);
   const [updated, setUpdated] = useState("--:--:--");
+  const [lastSyncMs, setLastSyncMs] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState(Date.now());
   const historyRef = useRef<Record<string, number[]>>({});
+
+  useEffect(() => {
+    const t = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -247,7 +254,9 @@ export default function TokenIntelligenceDeck() {
           };
         })
       );
-      setUpdated(new Date().toLocaleTimeString());
+      const syncedAt = Date.now();
+      setUpdated(new Date(syncedAt).toLocaleTimeString());
+      setLastSyncMs(syncedAt);
     };
 
     pull();
@@ -275,6 +284,8 @@ export default function TokenIntelligenceDeck() {
     return Math.max(...s, 1);
   }, [rows]);
 
+  const secondsSinceSync = lastSyncMs ? Math.max(0, Math.floor((nowMs - lastSyncMs) / 1000)) : null;
+
   return (
     <section>
       <div className="card deck-shell" style={{ padding: 20 }}>
@@ -286,7 +297,7 @@ export default function TokenIntelligenceDeck() {
             </p>
           </div>
           <div className="deck-live-badge" style={{ fontSize: 12, color: "#9fb3de", border: "1px solid #35508f", borderRadius: 999, padding: "6px 10px" }}>
-            <span className="deck-live-dot" /> Live sync {updated}
+            <span className="deck-live-dot" /> Live sync {updated}{secondsSinceSync !== null ? ` • ${secondsSinceSync}s ago` : ""}
           </div>
         </div>
 
@@ -332,7 +343,7 @@ export default function TokenIntelligenceDeck() {
             <div style={{ textAlign: "right" }}>24h %</div>
           </div>
           <div style={{ color: "#8ea6d8", fontSize: 11, padding: "0 10px 4px" }}>
-            Trend line = sampled TPS from live pulls only (no synthetic interpolation).
+            Real-time feel: live sync timer ticks every second, and spark/tracks pulse between live pulls. No synthetic TPS values are injected.
           </div>
           {rows.map((r) => {
             const hist = historyRef.current[r.chain] || (r.tps !== undefined ? [r.tps] : []);
@@ -360,7 +371,10 @@ export default function TokenIntelligenceDeck() {
                 <div style={{ display: "grid", gridTemplateColumns: "44px 180px 1fr 120px 100px 110px 100px", gap: 8, alignItems: "center" }}>
                   <div style={{ fontWeight: 800, color: "#9ec4ff" }}>#{String(r.rank).padStart(2, "0")}</div>
                   <div>
-                    <div style={{ fontWeight: 700 }}>{r.chain}</div>
+                    <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                      {r.chain}
+                      <span className={r.tps !== undefined ? "deck-row-live-dot on" : "deck-row-live-dot"} />
+                    </div>
                     <div style={{ fontSize: 10, color: regimeColor, letterSpacing: ".08em", textTransform: "uppercase" }}>{regimeLabel}</div>
                   </div>
                   <div>
@@ -381,7 +395,12 @@ export default function TokenIntelligenceDeck() {
                     </div>
                   </div>
                   <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{intFmt(r.txns24h)}</div>
-                  <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.tps !== undefined ? r.tps.toFixed(2) : "—"}</div>
+                  <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                    <div>{r.tps !== undefined ? r.tps.toFixed(2) : "—"}</div>
+                    <div className="deck-tps-track">
+                      <div className="deck-tps-fill" style={{ width: `${Math.min(100, ((r.tps || 0) / 200) * 100)}%` }} />
+                    </div>
+                  </div>
                   <div className="deck-spark-wrap" style={{ display: "flex", justifyContent: "center" }}>
                     <Sparkline values={hist} up={up} />
                   </div>
