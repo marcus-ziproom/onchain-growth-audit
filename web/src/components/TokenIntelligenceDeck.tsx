@@ -156,87 +156,98 @@ export default function TokenIntelligenceDeck() {
     let alive = true;
 
     const pull = async () => {
+      let chains: ChainApiRow[] = [];
       try {
         const chainRes = await fetch("https://api.llama.fi/v2/chains", { cache: "no-store" });
-        const chains = (await chainRes.json()) as ChainApiRow[];
+        chains = (await chainRes.json()) as ChainApiRow[];
+      } catch {
+        return;
+      }
 
-        const top10 = chains
-          .filter((c) => c?.name && typeof c.tvl === "number" && !BLACKLIST.has(c.name) && c.name !== "Fogo")
-          .sort((a, b) => b.tvl - a.tvl)
-          .slice(0, 10);
+      const top10 = chains
+        .filter((c) => c?.name && typeof c.tvl === "number" && !BLACKLIST.has(c.name) && c.name !== "Fogo")
+        .sort((a, b) => b.tvl - a.tvl)
+        .slice(0, 10);
 
-        const fogoTvl = chains.find((c) => c.name === "Fogo")?.tvl ?? 0;
+      const fogoTvl = chains.find((c) => c.name === "Fogo")?.tvl ?? 0;
 
-        const ids = Array.from(new Set(top10.map((c) => c.gecko_id).filter(Boolean))) as string[];
-        let marketMap = new Map<string, any>();
-        if (ids.length) {
-          try {
+      const marketMap = new Map<string, any>();
+      const ids = Array.from(new Set(top10.map((c) => c.gecko_id).filter(Boolean))) as string[];
+      if (ids.length) {
+        const chunks: string[][] = [];
+        for (let i = 0; i < ids.length; i += 4) chunks.push(ids.slice(i, i + 4));
+        const marketCalls = await Promise.allSettled(
+          chunks.map(async (grp) => {
             const mRes = await fetch(
-              `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(",")}&price_change_percentage=24h`,
+              `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${grp.join(",")}&price_change_percentage=24h`,
               { cache: "no-store" }
             );
-            const mk = (await mRes.json()) as any[];
-            marketMap = new Map(mk.map((m) => [m.id, m]));
-          } catch {}
+            return mRes.json();
+          })
+        );
+        for (const c of marketCalls) {
+          if (c.status !== "fulfilled" || !Array.isArray(c.value)) continue;
+          for (const m of c.value) marketMap.set(m.id, m);
         }
-
-        const statMap = new Map<string, { tps?: number; txns24h?: number }>();
-        await Promise.all(
-          top10.map(async (c) => {
-            let stats: { tps?: number; txns24h?: number } = {};
-            if (c.name === "Solana") stats = await fetchSolanaStats();
-            else if (c.name === "Bitcoin") stats = await fetchBitcoinStats();
-            else stats = await fetchEvmStats(c.name);
-            statMap.set(c.name, stats);
-          })
-        );
-
-        const builtTop10: Row[] = top10.map((c, i) => {
-          const m = c.gecko_id ? marketMap.get(c.gecko_id) : undefined;
-          const stats = statMap.get(c.name) || {};
-          return {
-            rank: i + 1,
-            chain: c.name,
-            geckoId: c.gecko_id || undefined,
-            tvl: c.tvl,
-            price: m?.current_price,
-            change24h: m?.price_change_percentage_24h,
-            supply: m?.circulating_supply,
-            tps: stats.tps,
-            txns24h: stats.txns24h,
-          };
-        });
-
-        const built = [
-          ...builtTop10,
-          {
-            rank: 11,
-            chain: "Fogo",
-            geckoId: "fogo",
-            tvl: fogoTvl,
-          } as Row,
-        ];
-
-        if (!alive) return;
-        setRows((prev) =>
-          built.map((n) => {
-            const p = prev.find((x) => x.chain === n.chain);
-            const nextTps = n.tps ?? p?.tps;
-            if (nextTps !== undefined) {
-              const hist = historyRef.current[n.chain] || [];
-              historyRef.current[n.chain] = [...hist.slice(-23), nextTps];
-            }
-            return {
-              ...n,
-              tps: nextTps,
-              txns24h: n.txns24h ?? p?.txns24h,
-            };
-          })
-        );
-        setUpdated(new Date().toLocaleTimeString());
-      } catch {
-        // keep current data
       }
+
+      const statMap = new Map<string, { tps?: number; txns24h?: number }>();
+      const statCalls = await Promise.allSettled(
+        top10.map(async (c) => {
+          let stats: { tps?: number; txns24h?: number } = {};
+          if (c.name === "Solana") stats = await fetchSolanaStats();
+          else if (c.name === "Bitcoin") stats = await fetchBitcoinStats();
+          else stats = await fetchEvmStats(c.name);
+          return { chain: c.name, stats };
+        })
+      );
+      for (const s of statCalls) {
+        if (s.status === "fulfilled") statMap.set(s.value.chain, s.value.stats || {});
+      }
+
+      const builtTop10: Row[] = top10.map((c, i) => {
+        const m = c.gecko_id ? marketMap.get(c.gecko_id) : undefined;
+        const stats = statMap.get(c.name) || {};
+        return {
+          rank: i + 1,
+          chain: c.name,
+          geckoId: c.gecko_id || undefined,
+          tvl: c.tvl,
+          price: m?.current_price,
+          change24h: m?.price_change_percentage_24h,
+          supply: m?.circulating_supply,
+          tps: stats.tps,
+          txns24h: stats.txns24h,
+        };
+      });
+
+      const built = [
+        ...builtTop10,
+        {
+          rank: 11,
+          chain: "Fogo",
+          geckoId: "fogo",
+          tvl: fogoTvl,
+        } as Row,
+      ];
+
+      if (!alive) return;
+      setRows((prev) =>
+        built.map((n) => {
+          const p = prev.find((x) => x.chain === n.chain);
+          const nextTps = n.tps ?? p?.tps;
+          if (nextTps !== undefined) {
+            const hist = historyRef.current[n.chain] || [];
+            historyRef.current[n.chain] = [...hist.slice(-23), nextTps];
+          }
+          return {
+            ...n,
+            tps: nextTps,
+            txns24h: n.txns24h ?? p?.txns24h,
+          };
+        })
+      );
+      setUpdated(new Date().toLocaleTimeString());
     };
 
     pull();
