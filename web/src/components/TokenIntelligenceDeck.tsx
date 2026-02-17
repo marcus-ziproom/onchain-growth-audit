@@ -277,7 +277,7 @@ export default function TokenIntelligenceDeck() {
 
   return (
     <section>
-      <div className="card" style={{ padding: 20 }}>
+      <div className="card deck-shell" style={{ padding: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div>
             <h2 style={{ marginBottom: 4 }}>Live token intelligence deck</h2>
@@ -285,27 +285,27 @@ export default function TokenIntelligenceDeck() {
               Strict live TVL ranking (#1–#10), Fogo fixed #11, with per-row live signal visuals.
             </p>
           </div>
-          <div style={{ fontSize: 12, color: "#9fb3de", border: "1px solid #35508f", borderRadius: 999, padding: "6px 10px" }}>
-            Live sync {updated}
+          <div className="deck-live-badge" style={{ fontSize: 12, color: "#9fb3de", border: "1px solid #35508f", borderRadius: 999, padding: "6px 10px" }}>
+            <span className="deck-live-dot" /> Live sync {updated}
           </div>
         </div>
 
         <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 10 }}>
-          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+          <div className="deck-stat-card" style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
             <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Top-10 TVL</div>
-            <div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(command.totalTvl)}</div>
+            <div className="deck-stat-value" style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(command.totalTvl)}</div>
           </div>
-          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+          <div className="deck-stat-card" style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
             <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Avg TVL</div>
-            <div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(command.avgTvl)}</div>
+            <div className="deck-stat-value" style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(command.avgTvl)}</div>
           </div>
-          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+          <div className="deck-stat-card" style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
             <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Txns (24h)</div>
-            <div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{compact(command.totalTx24)}</div>
+            <div className="deck-stat-value" style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{compact(command.totalTx24)}</div>
           </div>
-          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+          <div className="deck-stat-card" style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
             <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Avg TPS</div>
-            <div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{command.avgTps.toFixed(2)}</div>
+            <div className="deck-stat-value" style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{command.avgTps.toFixed(2)}</div>
           </div>
         </div>
 
@@ -356,7 +356,7 @@ export default function TokenIntelligenceDeck() {
             const supplyBar = r.supply ? Math.max(4, (r.supply / maxSupply) * 100) : 4;
 
             return (
-              <div key={r.chain} style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: "8px 10px", background: tint }}>
+              <div key={r.chain} className="deck-row" style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: "8px 10px", background: tint }}>
                 <div style={{ display: "grid", gridTemplateColumns: "44px 180px 1fr 120px 100px 110px 100px", gap: 8, alignItems: "center" }}>
                   <div style={{ fontWeight: 800, color: "#9ec4ff" }}>#{String(r.rank).padStart(2, "0")}</div>
                   <div>
@@ -366,6 +366,7 @@ export default function TokenIntelligenceDeck() {
                   <div>
                     <div style={{ height: 7, borderRadius: 999, background: "rgba(80,105,170,.35)", overflow: "hidden" }}>
                       <div
+                        className="deck-supply-fill"
                         style={{
                           width: `${supplyBar}%`,
                           height: "100%",
@@ -381,7 +382,7 @@ export default function TokenIntelligenceDeck() {
                   </div>
                   <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{intFmt(r.txns24h)}</div>
                   <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.tps !== undefined ? r.tps.toFixed(2) : "—"}</div>
-                  <div style={{ display: "flex", justifyContent: "center" }}>
+                  <div className="deck-spark-wrap" style={{ display: "flex", justifyContent: "center" }}>
                     <Sparkline values={hist} up={up} />
                   </div>
                   <div style={{ textAlign: "right", color: up ? "#92f8cc" : "#ffc47d", fontVariantNumeric: "tabular-nums" }}>
