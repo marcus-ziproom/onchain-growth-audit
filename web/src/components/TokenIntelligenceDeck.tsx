@@ -11,21 +11,22 @@ type Row = {
   tvl: number;
   price?: number;
   change24h?: number;
+  supply?: number;
   tps?: number;
   txns24h?: number;
 };
 
 const BLACKLIST = new Set(["All", "Others", "Stable", "Unknown"]);
 
-const EVM_RPC: Record<string, string> = {
-  Ethereum: "https://cloudflare-eth.com",
-  BSC: "https://bsc-dataseed.binance.org",
-  Base: "https://mainnet.base.org",
-  Arbitrum: "https://arb1.arbitrum.io/rpc",
-  Optimism: "https://mainnet.optimism.io",
-  Avalanche: "https://api.avax.network/ext/bc/C/rpc",
-  Polygon: "https://polygon-rpc.com",
-  Hyperliquid: "https://rpc.hyperliquid.xyz/evm",
+const EVM_RPCS: Record<string, string[]> = {
+  Ethereum: ["https://ethereum-rpc.publicnode.com", "https://cloudflare-eth.com"],
+  BSC: ["https://bsc-rpc.publicnode.com", "https://bsc-dataseed.binance.org"],
+  Base: ["https://base-rpc.publicnode.com", "https://mainnet.base.org"],
+  Arbitrum: ["https://arbitrum-one-rpc.publicnode.com", "https://arb1.arbitrum.io/rpc"],
+  Optimism: ["https://optimism-rpc.publicnode.com", "https://mainnet.optimism.io"],
+  Avalanche: ["https://avalanche-c-chain-rpc.publicnode.com", "https://api.avax.network/ext/bc/C/rpc"],
+  Polygon: ["https://polygon-bor-rpc.publicnode.com", "https://polygon-rpc.com"],
+  Hyperliquid: ["https://rpc.hyperliquid.xyz/evm"],
 };
 
 const usd = (n?: number) => {
@@ -39,6 +40,7 @@ const usd = (n?: number) => {
 
 const compact = (n?: number) => {
   if (n === undefined || !isFinite(n)) return "—";
+  if (n >= 1e12) return `${(n / 1e12).toFixed(2)}T`;
   if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
   if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
   if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
@@ -58,9 +60,7 @@ function Sparkline({ values, up }: { values: number[]; up: boolean }) {
   const max = Math.max(...values);
   const span = max - min || 1;
   const step = w / Math.max(values.length - 1, 1);
-  const points = values
-    .map((v, i) => `${i * step},${h - ((v - min) / span) * h}`)
-    .join(" ");
+  const points = values.map((v, i) => `${i * step},${h - ((v - min) / span) * h}`).join(" ");
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden>
       <polyline
@@ -86,44 +86,33 @@ async function rpcCall(rpc: string, method: string, params: any[] = []) {
 }
 
 async function fetchEvmStats(chain: string): Promise<{ tps?: number; txns24h?: number }> {
-  const rpc = EVM_RPC[chain];
-  if (!rpc) return {};
-  try {
-    const latestHex = (await rpcCall(rpc, "eth_blockNumber")) as string;
-    if (!latestHex) return {};
-    const latest = parseInt(latestHex, 16);
-    const windowBlocks = 120;
-    const start = Math.max(0, latest - windowBlocks);
+  const rpcs = EVM_RPCS[chain] || [];
+  for (const rpc of rpcs) {
+    try {
+      const latestHex = (await rpcCall(rpc, "eth_blockNumber")) as string;
+      if (!latestHex) continue;
+      const latest = parseInt(latestHex, 16);
+      const sampleSize = 10;
+      const nums = Array.from({ length: sampleSize }, (_, i) => latest - i).filter((n) => n >= 0);
 
-    const [latestBlock, startBlock] = await Promise.all([
-      rpcCall(rpc, "eth_getBlockByNumber", [`0x${latest.toString(16)}`, false]),
-      rpcCall(rpc, "eth_getBlockByNumber", [`0x${start.toString(16)}`, false]),
-    ]);
-    if (!latestBlock || !startBlock) return {};
+      const blocks = await Promise.all(
+        nums.map((n) => rpcCall(rpc, "eth_getBlockByNumber", [`0x${n.toString(16)}`, true]))
+      );
+      const valid = blocks.filter(Boolean);
+      if (valid.length < 3) continue;
 
-    const [latestTxHex, startTxHex] = await Promise.all([
-      rpcCall(rpc, "eth_getBlockTransactionCountByNumber", [`0x${latest.toString(16)}`]),
-      rpcCall(rpc, "eth_getBlockTransactionCountByNumber", [`0x${start.toString(16)}`]),
-    ]);
-
-    const t1 = parseInt(latestBlock.timestamp, 16);
-    const t0 = parseInt(startBlock.timestamp, 16);
-    const dt = Math.max(1, t1 - t0);
-
-    const txN = parseInt(latestBlock.number, 16);
-    const txCountNow = latestTxHex ? parseInt(latestTxHex, 16) : 0;
-    const txCountStart = startTxHex ? parseInt(startTxHex, 16) : 0;
-
-    const avgTxPerBlock = Math.max(0, (txCountNow + txCountStart) / 2);
-    const blocks = Math.max(1, txN - parseInt(startBlock.number, 16));
-    const sampledTx = avgTxPerBlock * blocks;
-
-    const tps = sampledTx / dt;
-    const txns24h = tps * 86400;
-    return { tps: isFinite(tps) ? tps : undefined, txns24h: isFinite(txns24h) ? txns24h : undefined };
-  } catch {
-    return {};
+      const txTotal = valid.reduce((a: number, b: any) => a + (Array.isArray(b.transactions) ? b.transactions.length : 0), 0);
+      const newestTs = parseInt(valid[0].timestamp, 16);
+      const oldestTs = parseInt(valid[valid.length - 1].timestamp, 16);
+      const dt = Math.max(1, newestTs - oldestTs);
+      const tps = txTotal / dt;
+      if (!isFinite(tps) || tps <= 0) continue;
+      return { tps, txns24h: tps * 86400 };
+    } catch {
+      continue;
+    }
   }
+  return {};
 }
 
 async function fetchSolanaStats(): Promise<{ tps?: number; txns24h?: number }> {
@@ -182,7 +171,10 @@ export default function TokenIntelligenceDeck() {
         let marketMap = new Map<string, any>();
         if (ids.length) {
           try {
-            const mRes = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(",")}&price_change_percentage=24h`, { cache: "no-store" });
+            const mRes = await fetch(
+              `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids.join(",")}&price_change_percentage=24h`,
+              { cache: "no-store" }
+            );
             const mk = (await mRes.json()) as any[];
             marketMap = new Map(mk.map((m) => [m.id, m]));
           } catch {}
@@ -209,6 +201,7 @@ export default function TokenIntelligenceDeck() {
             tvl: c.tvl,
             price: m?.current_price,
             change24h: m?.price_change_percentage_24h,
+            supply: m?.circulating_supply,
             tps: stats.tps,
             txns24h: stats.txns24h,
           };
@@ -266,29 +259,62 @@ export default function TokenIntelligenceDeck() {
     return { totalTvl, avgTvl, totalTx24, avgTps };
   }, [rows]);
 
+  const maxSupply = useMemo(() => {
+    const s = rows.map((r) => r.supply || 0);
+    return Math.max(...s, 1);
+  }, [rows]);
+
   return (
     <section>
       <div className="card" style={{ padding: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div>
             <h2 style={{ marginBottom: 4 }}>Live token intelligence deck</h2>
-            <p className="sub" style={{ margin: 0 }}>Strict live TVL ranking (#1–#10), Fogo fixed #11, with per-row live signal visuals.</p>
+            <p className="sub" style={{ margin: 0 }}>
+              Strict live TVL ranking (#1–#10), Fogo fixed #11, with per-row live signal visuals.
+            </p>
           </div>
-          <div style={{ fontSize: 12, color: "#9fb3de", border: "1px solid #35508f", borderRadius: 999, padding: "6px 10px" }}>Live sync {updated}</div>
+          <div style={{ fontSize: 12, color: "#9fb3de", border: "1px solid #35508f", borderRadius: 999, padding: "6px 10px" }}>
+            Live sync {updated}
+          </div>
         </div>
 
         <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 10 }}>
-          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}><div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Top-10 TVL</div><div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(command.totalTvl)}</div></div>
-          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}><div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Avg TVL</div><div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(command.avgTvl)}</div></div>
-          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}><div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Txns (24h)</div><div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{compact(command.totalTx24)}</div></div>
-          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}><div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Avg TPS</div><div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{command.avgTps.toFixed(2)}</div></div>
+          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+            <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Top-10 TVL</div>
+            <div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(command.totalTvl)}</div>
+          </div>
+          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+            <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Avg TVL</div>
+            <div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{usd(command.avgTvl)}</div>
+          </div>
+          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+            <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Txns (24h)</div>
+            <div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{compact(command.totalTx24)}</div>
+          </div>
+          <div style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: 10, background: "rgba(10,19,40,.6)" }}>
+            <div style={{ fontSize: 11, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Avg TPS</div>
+            <div style={{ fontWeight: 900, fontSize: 24, color: "#9df1d0", fontVariantNumeric: "tabular-nums" }}>{command.avgTps.toFixed(2)}</div>
+          </div>
         </div>
 
         <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "44px 180px 1fr 120px 100px 110px 100px", gap: 8, alignItems: "center", color: "#9fb3de", fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", padding: "0 10px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "44px 180px 1fr 120px 100px 110px 100px",
+              gap: 8,
+              alignItems: "center",
+              color: "#9fb3de",
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: ".08em",
+              padding: "0 10px",
+            }}
+          >
             <div>Rank</div>
             <div>Chain</div>
-            <div>TVL bar + Price</div>
+            <div>Circulating Supply + Price</div>
             <div style={{ textAlign: "right" }}>Txns (24h)</div>
             <div style={{ textAlign: "right" }}>TPS</div>
             <div style={{ textAlign: "center" }}>TPS Trend</div>
@@ -298,12 +324,10 @@ export default function TokenIntelligenceDeck() {
             Trend line = sampled TPS from live pulls only (no synthetic interpolation).
           </div>
           {rows.map((r) => {
-            const leader = rows[0]?.tvl || 1;
-            const bar = Math.max(4, (r.tvl / leader) * 100);
             const hist = historyRef.current[r.chain] || (r.tps !== undefined ? [r.tps] : []);
             const up = (r.change24h ?? 0) >= 0;
 
-            const isTvlLeaderBand = r.tvl > leader * 0.6;
+            const isTvlLeaderBand = r.tvl > (rows[0]?.tvl || 1) * 0.6;
             const isHighTps = (r.tps || 0) > 30;
             const isVolatile = Math.abs(r.change24h || 0) > 2;
 
@@ -315,21 +339,10 @@ export default function TokenIntelligenceDeck() {
               ? "rgba(139,92,246,.12)"
               : "rgba(10,19,40,.58)";
 
-            const regimeLabel = isVolatile
-              ? "VOLATILE"
-              : isHighTps
-              ? "HIGH TPS"
-              : isTvlLeaderBand
-              ? "TVL LEADER"
-              : "STABLE";
+            const regimeLabel = isVolatile ? "VOLATILE" : isHighTps ? "HIGH TPS" : isTvlLeaderBand ? "TVL LEADER" : "STABLE";
+            const regimeColor = isVolatile ? "#ffc47d" : isHighTps ? "#9defff" : isTvlLeaderBand ? "#c8b5ff" : "#9fb3de";
 
-            const regimeColor = isVolatile
-              ? "#ffc47d"
-              : isHighTps
-              ? "#9defff"
-              : isTvlLeaderBand
-              ? "#c8b5ff"
-              : "#9fb3de";
+            const supplyBar = r.supply ? Math.max(4, (r.supply / maxSupply) * 100) : 4;
 
             return (
               <div key={r.chain} style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: "8px 10px", background: tint }}>
@@ -341,14 +354,28 @@ export default function TokenIntelligenceDeck() {
                   </div>
                   <div>
                     <div style={{ height: 7, borderRadius: 999, background: "rgba(80,105,170,.35)", overflow: "hidden" }}>
-                      <div style={{ width: `${bar}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#22d3ee,#8b5cf6,#ec4899)", transition: "width .6s ease" }} />
+                      <div
+                        style={{
+                          width: `${supplyBar}%`,
+                          height: "100%",
+                          borderRadius: 999,
+                          background: "linear-gradient(90deg,#22d3ee,#8b5cf6,#ec4899)",
+                          transition: "width .6s ease",
+                        }}
+                      />
                     </div>
-                    <div style={{ fontSize: 11, color: "#9fb3de", marginTop: 3, fontVariantNumeric: "tabular-nums" }}>TVL {usd(r.tvl)} {r.price !== undefined ? `• Price ${usd(r.price)}` : ""}</div>
+                    <div style={{ fontSize: 11, color: "#9fb3de", marginTop: 3, fontVariantNumeric: "tabular-nums" }}>
+                      Supply {compact(r.supply)} {r.price !== undefined ? `• Price ${usd(r.price)}` : ""}
+                    </div>
                   </div>
                   <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{intFmt(r.txns24h)}</div>
                   <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.tps !== undefined ? r.tps.toFixed(2) : "—"}</div>
-                  <div style={{ display: "flex", justifyContent: "center" }}><Sparkline values={hist} up={up} /></div>
-                  <div style={{ textAlign: "right", color: up ? "#92f8cc" : "#ffc47d", fontVariantNumeric: "tabular-nums" }}>{up ? "▲" : "▼"} {Math.abs(r.change24h ?? 0).toFixed(2)}%</div>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    <Sparkline values={hist} up={up} />
+                  </div>
+                  <div style={{ textAlign: "right", color: up ? "#92f8cc" : "#ffc47d", fontVariantNumeric: "tabular-nums" }}>
+                    {up ? "▲" : "▼"} {Math.abs(r.change24h ?? 0).toFixed(2)}%
+                  </div>
                 </div>
               </div>
             );
@@ -356,7 +383,7 @@ export default function TokenIntelligenceDeck() {
         </div>
 
         <p style={{ marginTop: 10, fontSize: 12, color: "#8ea6d8" }}>
-          Data notes: TVL ranking is live from DeFiLlama. TPS/Txns use live chain RPC/API sampling only; if a chain has no reachable public telemetry route, values are shown as unavailable (—).
+          Data notes: TVL ranking is live from DeFiLlama. Supply/Price comes live from CoinGecko by chain token. TPS/Txns use live chain RPC/API sampling only; unavailable routes show —.
         </p>
       </div>
     </section>
