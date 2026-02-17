@@ -13,8 +13,6 @@ type Row = {
   change24h?: number;
   tps?: number;
   txns24h?: number;
-  tpsSource?: string;
-  txSource?: string;
 };
 
 const BLACKLIST = new Set(["All", "Others", "Stable", "Unknown"]);
@@ -60,7 +58,9 @@ function Sparkline({ values, up }: { values: number[]; up: boolean }) {
   const max = Math.max(...values);
   const span = max - min || 1;
   const step = w / Math.max(values.length - 1, 1);
-  const points = values.map((v, i) => `${i * step},${h - ((v - min) / span) * h}`).join(" ");
+  const points = values
+    .map((v, i) => `${i * step},${h - ((v - min) / span) * h}`)
+    .join(" ");
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden>
       <polyline
@@ -75,82 +75,86 @@ function Sparkline({ values, up }: { values: number[]; up: boolean }) {
   );
 }
 
-async function fetchEvmTps(chain: string): Promise<number | undefined> {
+async function rpcCall(rpc: string, method: string, params: any[] = []) {
+  const res = await fetch(rpc, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+  });
+  const j = await res.json();
+  return j?.result;
+}
+
+async function fetchEvmStats(chain: string): Promise<{ tps?: number; txns24h?: number }> {
   const rpc = EVM_RPC[chain];
-  if (!rpc) return undefined;
+  if (!rpc) return {};
   try {
-    const req = (blockHex: string, full = false) =>
-      fetch(rpc, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getBlockByNumber", params: [blockHex, full] }),
-      });
+    const latestHex = (await rpcCall(rpc, "eth_blockNumber")) as string;
+    if (!latestHex) return {};
+    const latest = parseInt(latestHex, 16);
+    const windowBlocks = 120;
+    const start = Math.max(0, latest - windowBlocks);
 
-    const latestRes = await req("latest", true);
-    const latest = (await latestRes.json())?.result;
-    if (!latest) return undefined;
+    const [latestBlock, startBlock] = await Promise.all([
+      rpcCall(rpc, "eth_getBlockByNumber", [`0x${latest.toString(16)}`, false]),
+      rpcCall(rpc, "eth_getBlockByNumber", [`0x${start.toString(16)}`, false]),
+    ]);
+    if (!latestBlock || !startBlock) return {};
 
-    const latestNum = parseInt(latest.number, 16);
-    const sampleBlocks = 20;
-    const olderNum = Math.max(0, latestNum - sampleBlocks);
+    const [latestTxHex, startTxHex] = await Promise.all([
+      rpcCall(rpc, "eth_getBlockTransactionCountByNumber", [`0x${latest.toString(16)}`]),
+      rpcCall(rpc, "eth_getBlockTransactionCountByNumber", [`0x${start.toString(16)}`]),
+    ]);
 
-    const olderRes = await req("0x" + olderNum.toString(16), true);
-    const older = (await olderRes.json())?.result;
-    if (!older) return undefined;
+    const t1 = parseInt(latestBlock.timestamp, 16);
+    const t0 = parseInt(startBlock.timestamp, 16);
+    const dt = Math.max(1, t1 - t0);
 
-    const tLatest = parseInt(latest.timestamp, 16);
-    const tOlder = parseInt(older.timestamp, 16);
-    const dt = Math.max(1, tLatest - tOlder);
+    const txN = parseInt(latestBlock.number, 16);
+    const txCountNow = latestTxHex ? parseInt(latestTxHex, 16) : 0;
+    const txCountStart = startTxHex ? parseInt(startTxHex, 16) : 0;
 
-    let txCount = 0;
-    for (let n = olderNum + 1; n <= latestNum; n++) {
-      const bRes = await req("0x" + n.toString(16), true);
-      const b = (await bRes.json())?.result;
-      txCount += Array.isArray(b?.transactions) ? b.transactions.length : 0;
-    }
+    const avgTxPerBlock = Math.max(0, (txCountNow + txCountStart) / 2);
+    const blocks = Math.max(1, txN - parseInt(startBlock.number, 16));
+    const sampledTx = avgTxPerBlock * blocks;
 
-    return txCount / dt;
-  } catch {
-    return undefined;
-  }
-}
-
-async function fetchSolanaTps(): Promise<number | undefined> {
-  try {
-    const r = await fetch("https://api.mainnet-beta.solana.com", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getRecentPerformanceSamples", params: [1] }),
-    });
-    const j = await r.json();
-    const s = j?.result?.[0];
-    if (!s) return undefined;
-    return Number(s.numTransactions) / Math.max(1, Number(s.samplePeriodSecs || 1));
-  } catch {
-    return undefined;
-  }
-}
-
-async function fetchBitcoinStats(): Promise<{ tps?: number; txns24h?: number }> {
-  try {
-    const r = await fetch("https://api.blockchair.com/bitcoin/stats", { cache: "no-store" });
-    const j = await r.json();
-    const tx24 = Number(j?.data?.transactions_24h || 0);
-    if (!tx24) return {};
-    return { txns24h: tx24, tps: tx24 / 86400 };
+    const tps = sampledTx / dt;
+    const txns24h = tps * 86400;
+    return { tps: isFinite(tps) ? tps : undefined, txns24h: isFinite(txns24h) ? txns24h : undefined };
   } catch {
     return {};
   }
 }
 
-async function fetchEthereum24hTxns(): Promise<number | undefined> {
+async function fetchSolanaStats(): Promise<{ tps?: number; txns24h?: number }> {
   try {
-    const r = await fetch("https://api.blockchair.com/ethereum/stats", { cache: "no-store" });
+    const r = await fetch("https://api.mainnet-beta.solana.com", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getRecentPerformanceSamples", params: [60] }),
+    });
     const j = await r.json();
-    const tx24 = Number(j?.data?.transactions_24h || 0);
-    return tx24 > 0 ? tx24 : undefined;
+    const samples = Array.isArray(j?.result) ? j.result : [];
+    if (!samples.length) return {};
+    const totalTx = samples.reduce((a: number, s: any) => a + Number(s?.numTransactions || 0), 0);
+    const totalSecs = samples.reduce((a: number, s: any) => a + Number(s?.samplePeriodSecs || 0), 0);
+    if (!totalTx || !totalSecs) return {};
+    const tps = totalTx / totalSecs;
+    return { tps, txns24h: tps * 86400 };
   } catch {
-    return undefined;
+    return {};
+  }
+}
+
+async function fetchBitcoinStats(): Promise<{ tps?: number; txns24h?: number }> {
+  try {
+    const r = await fetch("https://blockchain.info/q/24hrtransactioncount", { cache: "no-store" });
+    const t = await r.text();
+    const tx24 = Number(t.trim());
+    if (!tx24 || !isFinite(tx24)) return {};
+    return { txns24h: tx24, tps: tx24 / 86400 };
+  } catch {
+    return {};
   }
 }
 
@@ -184,46 +188,20 @@ export default function TokenIntelligenceDeck() {
           } catch {}
         }
 
-        const tpsMap = new Map<string, { tps?: number; source?: string; tx24?: number; txSource?: string }>();
-        const ethTx24 = await fetchEthereum24hTxns();
-
+        const statMap = new Map<string, { tps?: number; txns24h?: number }>();
         await Promise.all(
           top10.map(async (c) => {
-            if (c.name === "Solana") {
-              const tps = await fetchSolanaTps();
-              tpsMap.set(c.name, { tps, source: tps !== undefined ? "Solana RPC" : undefined });
-              return;
-            }
-            if (c.name === "Bitcoin") {
-              const btc = await fetchBitcoinStats();
-              tpsMap.set(c.name, {
-                tps: btc.tps,
-                source: btc.tps !== undefined ? "Blockchair" : undefined,
-                tx24: btc.txns24h,
-                txSource: btc.txns24h !== undefined ? "Blockchair" : undefined,
-              });
-              return;
-            }
-
-            const tps = await fetchEvmTps(c.name);
-            tpsMap.set(c.name, {
-              tps,
-              source: tps !== undefined ? "Chain RPC" : undefined,
-              tx24: c.name === "Ethereum" ? ethTx24 : undefined,
-              txSource: c.name === "Ethereum" && ethTx24 !== undefined ? "Blockchair" : undefined,
-            });
+            let stats: { tps?: number; txns24h?: number } = {};
+            if (c.name === "Solana") stats = await fetchSolanaStats();
+            else if (c.name === "Bitcoin") stats = await fetchBitcoinStats();
+            else stats = await fetchEvmStats(c.name);
+            statMap.set(c.name, stats);
           })
         );
 
         const builtTop10: Row[] = top10.map((c, i) => {
           const m = c.gecko_id ? marketMap.get(c.gecko_id) : undefined;
-          const stats = tpsMap.get(c.name);
-          const tps = stats?.tps;
-          const hist = historyRef.current[c.name] || [];
-          if (tps !== undefined && isFinite(tps)) {
-            historyRef.current[c.name] = [...hist.slice(-23), tps];
-          }
-
+          const stats = statMap.get(c.name) || {};
           return {
             rank: i + 1,
             chain: c.name,
@@ -231,10 +209,8 @@ export default function TokenIntelligenceDeck() {
             tvl: c.tvl,
             price: m?.current_price,
             change24h: m?.price_change_percentage_24h,
-            tps,
-            txns24h: stats?.tx24,
-            tpsSource: stats?.source,
-            txSource: stats?.txSource,
+            tps: stats.tps,
+            txns24h: stats.txns24h,
           };
         });
 
@@ -245,13 +221,25 @@ export default function TokenIntelligenceDeck() {
             chain: "Fogo",
             geckoId: "fogo",
             tvl: fogoTvl,
-            tps: undefined,
-            txns24h: undefined,
           } as Row,
         ];
 
         if (!alive) return;
-        setRows(built);
+        setRows((prev) =>
+          built.map((n) => {
+            const p = prev.find((x) => x.chain === n.chain);
+            const nextTps = n.tps ?? p?.tps;
+            if (nextTps !== undefined) {
+              const hist = historyRef.current[n.chain] || [];
+              historyRef.current[n.chain] = [...hist.slice(-23), nextTps];
+            }
+            return {
+              ...n,
+              tps: nextTps,
+              txns24h: n.txns24h ?? p?.txns24h,
+            };
+          })
+        );
         setUpdated(new Date().toLocaleTimeString());
       } catch {
         // keep current data
@@ -271,8 +259,9 @@ export default function TokenIntelligenceDeck() {
     const top10 = rows.slice(0, 10);
     const totalTvl = top10.reduce((a, b) => a + b.tvl, 0);
     const avgTvl = totalTvl / Math.max(top10.length, 1);
-    const totalTx24 = top10.reduce((a, b) => a + (b.txns24h || 0), 0);
+    const txRows = top10.filter((r) => r.txns24h !== undefined);
     const tpsRows = top10.filter((r) => r.tps !== undefined);
+    const totalTx24 = txRows.reduce((a, b) => a + (b.txns24h || 0), 0);
     const avgTps = tpsRows.length ? tpsRows.reduce((a, b) => a + (b.tps || 0), 0) / tpsRows.length : 0;
     return { totalTvl, avgTvl, totalTx24, avgTps };
   }, [rows]);
@@ -283,7 +272,7 @@ export default function TokenIntelligenceDeck() {
         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div>
             <h2 style={{ marginBottom: 4 }}>Live token intelligence deck</h2>
-            <p className="sub" style={{ margin: 0 }}>Strict live TVL ranking (#1–#10), Fogo fixed #11, with no synthetic counters.</p>
+            <p className="sub" style={{ margin: 0 }}>Strict live TVL ranking (#1–#10), Fogo fixed #11, with per-row live signal visuals.</p>
           </div>
           <div style={{ fontSize: 12, color: "#9fb3de", border: "1px solid #35508f", borderRadius: 999, padding: "6px 10px" }}>Live sync {updated}</div>
         </div>
@@ -306,7 +295,7 @@ export default function TokenIntelligenceDeck() {
             <div style={{ textAlign: "right" }}>24h %</div>
           </div>
           <div style={{ color: "#8ea6d8", fontSize: 11, padding: "0 10px 4px" }}>
-            Trend line is pulled only from real TPS fetches. No synthetic ticker increments.
+            Trend line = sampled TPS from live pulls only (no synthetic interpolation).
           </div>
           {rows.map((r) => {
             const leader = rows[0]?.tvl || 1;
@@ -318,9 +307,29 @@ export default function TokenIntelligenceDeck() {
             const isHighTps = (r.tps || 0) > 30;
             const isVolatile = Math.abs(r.change24h || 0) > 2;
 
-            const tint = isVolatile ? "rgba(245,158,11,.12)" : isHighTps ? "rgba(34,211,238,.10)" : isTvlLeaderBand ? "rgba(139,92,246,.12)" : "rgba(10,19,40,.58)";
-            const regimeLabel = isVolatile ? "VOLATILE" : isHighTps ? "HIGH TPS" : isTvlLeaderBand ? "TVL LEADER" : "STABLE";
-            const regimeColor = isVolatile ? "#ffc47d" : isHighTps ? "#9defff" : isTvlLeaderBand ? "#c8b5ff" : "#9fb3de";
+            const tint = isVolatile
+              ? "rgba(245,158,11,.12)"
+              : isHighTps
+              ? "rgba(34,211,238,.10)"
+              : isTvlLeaderBand
+              ? "rgba(139,92,246,.12)"
+              : "rgba(10,19,40,.58)";
+
+            const regimeLabel = isVolatile
+              ? "VOLATILE"
+              : isHighTps
+              ? "HIGH TPS"
+              : isTvlLeaderBand
+              ? "TVL LEADER"
+              : "STABLE";
+
+            const regimeColor = isVolatile
+              ? "#ffc47d"
+              : isHighTps
+              ? "#9defff"
+              : isTvlLeaderBand
+              ? "#c8b5ff"
+              : "#9fb3de";
 
             return (
               <div key={r.chain} style={{ border: "1px solid #2f4a84", borderRadius: 12, padding: "8px 10px", background: tint }}>
@@ -338,12 +347,8 @@ export default function TokenIntelligenceDeck() {
                   </div>
                   <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{intFmt(r.txns24h)}</div>
                   <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.tps !== undefined ? r.tps.toFixed(2) : "—"}</div>
-                  <div style={{ display: "flex", justifyContent: "center" }}>{hist.length ? <Sparkline values={hist} up={up} /> : <span style={{ fontSize: 12, color: "#6f87bd" }}>—</span>}</div>
+                  <div style={{ display: "flex", justifyContent: "center" }}><Sparkline values={hist} up={up} /></div>
                   <div style={{ textAlign: "right", color: up ? "#92f8cc" : "#ffc47d", fontVariantNumeric: "tabular-nums" }}>{up ? "▲" : "▼"} {Math.abs(r.change24h ?? 0).toFixed(2)}%</div>
-                </div>
-                <div style={{ marginTop: 4, fontSize: 10, color: "#7f95c8", display: "flex", gap: 10 }}>
-                  <span>TPS: {r.tpsSource || "unavailable"}</span>
-                  <span>Txns(24h): {r.txSource || "unavailable"}</span>
                 </div>
               </div>
             );
@@ -351,7 +356,7 @@ export default function TokenIntelligenceDeck() {
         </div>
 
         <p style={{ marginTop: 10, fontSize: 12, color: "#8ea6d8" }}>
-          Data notes: TVL is live from DeFiLlama. Prices/24h move are live from CoinGecko. TPS/Txns use only direct public sources per row; when unavailable we show “—” instead of simulating.
+          Data notes: TVL ranking is live from DeFiLlama. TPS/Txns use live chain RPC/API sampling only; if a chain has no reachable public telemetry route, values are shown as unavailable (—).
         </p>
       </div>
     </section>

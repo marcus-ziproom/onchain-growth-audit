@@ -33,7 +33,7 @@ export default function Home() {
               <div className="signal-title">Live Product Signal</div>
               <h3 style={{ margin: "0 0 10px", fontSize: 26 }}>48-Hour On-Chain Growth + Tokenomics Audit</h3>
               <div className="metric-stack">
-                <div className="metric"><b>$1,200 USDC</b><span>Fixed fee, upfront, scope-locked</span></div>
+                <div className="metric"><b>$10,200 USDC</b><span>Fixed fee, scope-locked</span></div>
                 <div className="metric"><b>48h</b><span>Turnaround after intake completion</span></div>
                 <div className="metric"><b>10+</b><span>Prioritized actions by impact</span></div>
               </div>
@@ -63,8 +63,8 @@ export default function Home() {
               </article>
               <aside className="card">
                 <div style={{ fontSize: 12, color: "#9fb3de", textTransform: "uppercase", letterSpacing: ".08em" }}>Engagement</div>
-                <div className="price">$1,200</div>
-                <p style={{ marginTop: 4 }}>USDC upfront • fixed scope</p>
+                <div className="price">$10,200 fixed fee</div>
+                <p style={{ marginTop: 4 }}>USDC • fixed scope</p>
                 <p className="sub">Includes one async follow-up so your team can execute fast without losing momentum.</p>
                 <Link className="btn btn-pri" style={{ width: "100%" }} href="/intake" onClick={() => trackEvent("offer_buy_click")}>Buy Audit</Link>
                 <Link className="btn btn-sec" style={{ width: "100%", marginTop: 10 }} href="/report-sample" onClick={() => trackEvent("offer_sample_click")}>See Sample Output</Link>
