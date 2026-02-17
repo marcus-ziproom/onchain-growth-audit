@@ -147,24 +147,56 @@ async function fetchBitcoinStats(): Promise<{ tps?: number; txns24h?: number }> 
   }
 }
 
+let fogoPrevCount: number | null = null;
+let fogoPrevTs: number | null = null;
+
 async function fetchFogoStats(): Promise<{ tps?: number; txns24h?: number }> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const r = await fetch("https://mainnet.fogo.io", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getRecentPerformanceSamples", params: [60] }),
+      });
+      const j = await r.json();
+      const samples = Array.isArray(j?.result) ? j.result : [];
+      if (samples.length) {
+        const totalTx = samples.reduce((a: number, s: any) => a + Number(s?.numTransactions || 0), 0);
+        const totalSecs = samples.reduce((a: number, s: any) => a + Number(s?.samplePeriodSecs || 0), 0);
+        if (totalTx && totalSecs) {
+          const tps = totalTx / totalSecs;
+          return { tps, txns24h: tps * 86400 };
+        }
+      }
+    } catch {
+      // retry
+    }
+  }
+
   try {
     const r = await fetch("https://mainnet.fogo.io", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getRecentPerformanceSamples", params: [60] }),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getEpochInfo", params: [] }),
     });
     const j = await r.json();
-    const samples = Array.isArray(j?.result) ? j.result : [];
-    if (!samples.length) return {};
-    const totalTx = samples.reduce((a: number, s: any) => a + Number(s?.numTransactions || 0), 0);
-    const totalSecs = samples.reduce((a: number, s: any) => a + Number(s?.samplePeriodSecs || 0), 0);
-    if (!totalTx || !totalSecs) return {};
-    const tps = totalTx / totalSecs;
-    return { tps, txns24h: tps * 86400 };
+    const count = Number(j?.result?.transactionCount || 0);
+    const now = Date.now();
+    if (count && fogoPrevCount !== null && fogoPrevTs !== null) {
+      const dt = Math.max(1, (now - fogoPrevTs) / 1000);
+      const dtx = Math.max(0, count - fogoPrevCount);
+      const tps = dtx / dt;
+      fogoPrevCount = count;
+      fogoPrevTs = now;
+      if (tps > 0) return { tps, txns24h: tps * 86400 };
+    }
+    fogoPrevCount = count || fogoPrevCount;
+    fogoPrevTs = now;
   } catch {
-    return {};
+    // ignore
   }
+
+  return {};
 }
 
 export default function TokenIntelligenceDeck() {
@@ -290,7 +322,7 @@ export default function TokenIntelligenceDeck() {
     };
 
     pull();
-    const id = setInterval(pull, 30000);
+    const id = setInterval(pull, 12000);
     return () => {
       alive = false;
       clearInterval(id);
